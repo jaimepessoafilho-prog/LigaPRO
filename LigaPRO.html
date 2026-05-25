@@ -1433,17 +1433,18 @@ body.admin-mode .admin-bar { display: flex; }
     <div class="login-badge">🎾 Plataforma de Tênis Recreativo</div>
     <div class="login-field">
       <label>E-mail</label>
-      <input type="email" id="lEmail" value="josias@ligaleao.com" placeholder="seuemail@exemplo.com">
+      <input type="email" id="lEmail" value="" placeholder="seuemail@exemplo.com" autocomplete="username">
     </div>
     <div class="login-field">
       <label>Senha</label>
-      <input type="password" id="lPass" value="123456" placeholder="••••••••">
+      <input type="password" id="lPass" value="" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div id="loginError" style="display:none;background:var(--red-l);color:var(--red);border-radius:var(--r8);padding:10px 14px;font-size:13px;font-weight:500;text-align:center">
+      ❌ E-mail ou senha incorretos.
     </div>
     <button class="login-btn" onclick="doLogin()">Entrar na Liga</button>
     <div class="login-demo">
-      <strong>Contas demo disponíveis:</strong><br>
-      🎾 Atleta: josias@ligaleao.com / 123456<br>
-      🛡️ Admin: admin@ligaleao.com / admin123
+      🎾 Use seu e-mail e senha cadastrados para entrar.
     </div>
     <div class="login-link">Primeiro acesso? <span onclick="goRegister()">Crie sua conta</span></div>
   </div>
@@ -2064,34 +2065,62 @@ const players=[
 ];
 
 /* ─── LOGIN ─── */
+const ADMIN_EMAIL = 'jaime.pessoa.filho@gmail.com';
+const ADMIN_PASS  = 'j123456';
+
 function doLogin(){
-  const e=document.getElementById('lEmail').value;
-  isAdmin=e.includes('admin');
-  document.getElementById('loginScreen').style.display='none';
-  document.getElementById('appShell').style.display='block';
-  if(isAdmin){
+  const e   = document.getElementById('lEmail').value.trim().toLowerCase();
+  const s   = document.getElementById('lPass').value;
+  const errEl = document.getElementById('loginError');
+
+  if(!e || !s){ errEl.style.display='block'; return; }
+  errEl.style.display='none';
+
+  /* ── Admin fixo ── */
+  if(e === ADMIN_EMAIL && s === ADMIN_PASS){
+    isAdmin=true;
+    document.getElementById('loginScreen').style.display='none';
+    document.getElementById('appShell').style.display='block';
     document.body.classList.add('admin-mode');
     document.body.classList.remove('athlete-mode');
     currentPlayer=null;
     document.getElementById('rolePill').textContent='ADMIN';
     document.getElementById('rolePill').className='role-pill role-admin';
-    document.getElementById('userAv').textContent='CL';
+    document.getElementById('userAv').textContent='JP';
     document.getElementById('userAv').style.background='var(--gold)';
-    document.getElementById('userName').textContent='Carlos Leão';
+    document.getElementById('userName').textContent='Jaime Pessoa';
     document.getElementById('navEventos').style.display='';
     document.getElementById('mobEventos').style.display='';
-  } else {
+    renderRanking(); calcProgress(); renderPendingGames();
+    renderHistory(); renderAthleteCard(); renderLiveRanking();
+    toast('👋 Bem-vindo, Jaime!');
+    return;
+  }
+
+  /* ── Atleta por e-mail cadastrado ── */
+  const athlete = players.find(p => p.email && p.email.toLowerCase() === e);
+  if(athlete){
+    isAdmin=false;
+    document.getElementById('loginScreen').style.display='none';
+    document.getElementById('appShell').style.display='block';
     document.body.classList.remove('admin-mode');
     document.body.classList.add('athlete-mode');
-    // Demo: josias é o primeiro jogador (posição 1)
-    currentPlayer=players[0];
+    currentPlayer=athlete;
+    renderRanking(); calcProgress(); renderPendingGames();
+    renderHistory(); renderAthleteCard(); renderLiveRanking();
+    toast('👋 Bem-vindo, '+athlete.n.split(' ')[0]+'!');
+    return;
   }
-  renderRanking();
-  calcProgress();
-  renderPendingGames();
-  renderHistory();
-  renderAthleteCard();
-  renderLiveRanking();
+
+  /* ── Demo: qualquer outro e-mail/senha loga como Josias ── */
+  isAdmin=false;
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('appShell').style.display='block';
+  document.body.classList.remove('admin-mode');
+  document.body.classList.add('athlete-mode');
+  currentPlayer=players[0];
+  renderRanking(); calcProgress(); renderPendingGames();
+  renderHistory(); renderAthleteCard(); renderLiveRanking();
   toast('👋 Bem-vindo ao LigaPRO!');
 }
 
