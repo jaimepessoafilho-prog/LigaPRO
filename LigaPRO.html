@@ -1,0 +1,2611 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>LigaPRO — Tênis Recreativo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+
+/* ═══════════════════════════════════════════
+   RESET & DESIGN TOKENS
+═══════════════════════════════════════════ */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  /* Palette */
+  --green:    #00C46A;
+  --green-d:  #00A358;
+  --green-l:  #D4F5E5;
+  --green-gl: rgba(0,196,106,.15);
+
+  --clay:     #C85A1A;
+  --clay-l:   #FAE8DC;
+
+  --navy:     #0B1927;
+  --navy-m:   #152435;
+  --navy-l:   #1E3550;
+
+  --gold:     #F5C518;
+  --gold-d:   #B8920E;
+
+  --red:      #E03535;
+  --red-l:    #FDEAEA;
+
+  --white:    #FFFFFF;
+  --bg:       #F0F4F8;
+  --bg2:      #E4EAF1;
+  --border:   #D1DCE8;
+  --border2:  #B8CAD9;
+  --text:     #0B1927;
+  --text2:    #3D5369;
+  --text3:    #7A96AA;
+
+  /* Typography */
+  --fD: 'Bebas Neue', sans-serif;
+  --fB: 'DM Sans', sans-serif;
+
+  /* Border radius */
+  --r4:   4px;
+  --r8:   8px;
+  --r12:  12px;
+  --r16:  16px;
+  --r20:  20px;
+  --r24:  24px;
+  --rfull: 9999px;
+
+  /* Shadows */
+  --sh-xs: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  --sh-sm: 0 2px 8px rgba(0,0,0,.08), 0 1px 3px rgba(0,0,0,.05);
+  --sh-md: 0 4px 16px rgba(0,0,0,.10), 0 2px 6px rgba(0,0,0,.06);
+  --sh-lg: 0 8px 28px rgba(0,0,0,.13), 0 3px 10px rgba(0,0,0,.07);
+  --sh-xl: 0 16px 48px rgba(0,0,0,.16), 0 6px 16px rgba(0,0,0,.09);
+
+  /* Transitions */
+  --t-fast: all .15s ease;
+  --t-base: all .22s ease;
+  --t-slow: all .38s cubic-bezier(.4,0,.2,1);
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--fB);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+button { font-family: var(--fB); cursor: pointer; }
+input, select, textarea { font-family: var(--fB); }
+a { color: var(--green); text-decoration: none; }
+
+/* ═══════════════════════════════════════════
+   ANIMATIONS
+═══════════════════════════════════════════ */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: .45; }
+}
+@keyframes bar-grow {
+  from { width: 0 !important; }
+}
+@keyframes shimmer-bg {
+  0%   { background-position: -400px 0; }
+  100% { background-position:  400px 0; }
+}
+
+/* ═══════════════════════════════════════════
+   LOGIN SCREEN
+═══════════════════════════════════════════ */
+#loginScreen {
+  position: fixed; inset: 0; z-index: 9999;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--navy);
+  background-image:
+    radial-gradient(ellipse 70% 65% at  5% 95%, rgba(0,196,106,.20) 0%, transparent 60%),
+    radial-gradient(ellipse 55% 70% at 95%  5%, rgba(200,90,26,.15) 0%, transparent 60%),
+    radial-gradient(ellipse 45% 45% at 50% 50%, rgba(245,197,24,.05) 0%, transparent 65%);
+  overflow: hidden;
+}
+
+/* Subtle court-line grid */
+#loginScreen::before {
+  content: '';
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,.028) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.028) 1px, transparent 1px);
+  background-size: 52px 52px;
+  pointer-events: none;
+}
+
+/* Decorative blur circle */
+#loginScreen::after {
+  content: '';
+  position: absolute;
+  width: 480px; height: 480px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0,196,106,.07), transparent 70%);
+  right: -120px; bottom: -120px;
+  pointer-events: none;
+}
+
+.login-box {
+  position: relative; z-index: 1;
+  background: rgba(255,255,255,.055);
+  border: 1px solid rgba(255,255,255,.13);
+  border-radius: var(--r24);
+  padding: 48px 44px;
+  width: 440px; max-width: 93vw;
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  text-align: center;
+  box-shadow:
+    0 28px 72px rgba(0,0,0,.45),
+    inset 0 1px 0 rgba(255,255,255,.12),
+    inset 0 -1px 0 rgba(0,0,0,.1);
+  animation: fadeUp .5s ease both;
+}
+
+.login-logo {
+  font-family: var(--fD);
+  font-size: 64px; letter-spacing: 5px;
+  color: var(--white); line-height: 1;
+}
+.login-logo em { color: var(--green); font-style: normal; }
+
+.login-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  margin-top: 10px; margin-bottom: 32px;
+  background: rgba(0,196,106,.14);
+  border: 1px solid rgba(0,196,106,.28);
+  border-radius: var(--rfull);
+  padding: 5px 16px;
+  font-size: 11px; font-weight: 600;
+  color: var(--green); letter-spacing: .5px;
+}
+
+.login-field { margin-bottom: 14px; text-align: left; }
+.login-field label {
+  display: block;
+  font-size: 10px; font-weight: 700;
+  color: rgba(255,255,255,.4);
+  text-transform: uppercase; letter-spacing: .7px;
+  margin-bottom: 7px;
+}
+.login-field input {
+  width: 100%;
+  background: rgba(255,255,255,.07);
+  border: 1.5px solid rgba(255,255,255,.12);
+  border-radius: var(--r12);
+  padding: 13px 16px;
+  color: var(--white); font-size: 14px;
+  outline: none; transition: var(--t-base);
+}
+.login-field input:focus {
+  border-color: var(--green);
+  background: rgba(0,196,106,.08);
+  box-shadow: 0 0 0 3px rgba(0,196,106,.18);
+}
+.login-field input::placeholder { color: rgba(255,255,255,.22); }
+
+.login-btn {
+  width: 100%; margin-top: 10px; padding: 15px;
+  background: var(--green);
+  color: var(--navy); border: none;
+  border-radius: var(--r12);
+  font-size: 15px; font-weight: 700; letter-spacing: .5px;
+  transition: var(--t-base);
+  box-shadow: 0 4px 18px rgba(0,196,106,.38);
+}
+.login-btn:hover {
+  background: #00DA76;
+  box-shadow: 0 6px 28px rgba(0,196,106,.55);
+  transform: translateY(-1px);
+}
+.login-btn:active { transform: scale(.97); }
+
+.login-demo {
+  margin-top: 20px; padding: 14px 16px;
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: var(--r12);
+  font-size: 11px; color: rgba(255,255,255,.32);
+  line-height: 2; text-align: left;
+}
+.login-demo strong { color: rgba(255,255,255,.6); }
+
+.login-link { margin-top: 16px; font-size: 12px; color: rgba(255,255,255,.32); }
+.login-link span { color: var(--green); cursor: pointer; font-weight: 600; }
+.login-link span:hover { text-decoration: underline; }
+
+/* ═══════════════════════════════════════════
+   APP SHELL
+═══════════════════════════════════════════ */
+#appShell { display: none; }
+
+/* ═══════════════════════════════════════════
+   TOP NAV
+═══════════════════════════════════════════ */
+.topnav {
+  background: rgba(11,25,39,.93);
+  height: 60px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 24px;
+  position: sticky; top: 0; z-index: 500;
+  border-bottom: 1px solid rgba(255,255,255,.07);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
+.nav-brand {
+  font-family: var(--fD);
+  font-size: 30px; letter-spacing: 2.5px;
+  color: var(--white);
+}
+.nav-brand em { color: var(--green); font-style: normal; }
+
+.nav-links { display: flex; gap: 2px; }
+
+.nav-link {
+  background: none; border: none;
+  color: rgba(255,255,255,.42);
+  padding: 8px 14px; border-radius: var(--r8);
+  font-size: 13px; font-weight: 500;
+  display: flex; align-items: center; gap: 6px;
+  transition: var(--t-fast); white-space: nowrap;
+}
+.nav-link i { font-size: 17px; }
+.nav-link:hover  { background: rgba(255,255,255,.08); color: var(--white); }
+.nav-link.active { background: rgba(0,196,106,.16); color: var(--green); }
+
+.nav-right { display: flex; align-items: center; gap: 10px; }
+
+.role-pill {
+  font-size: 10px; font-weight: 700; letter-spacing: .5px;
+  padding: 4px 12px; border-radius: var(--rfull);
+}
+.role-atleta { background: rgba(0,196,106,.18); color: var(--green); }
+.role-admin  { background: rgba(245,197,24,.18); color: var(--gold); }
+
+.user-chip {
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(255,255,255,.07);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: var(--rfull);
+  padding: 4px 14px 4px 5px;
+  cursor: pointer; transition: var(--t-fast);
+}
+.user-chip:hover { background: rgba(255,255,255,.12); }
+
+.user-av {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: var(--green); color: var(--navy);
+  font-size: 11px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 0 0 2px rgba(0,196,106,.35);
+  flex-shrink: 0;
+}
+.user-name { font-size: 12px; color: rgba(255,255,255,.75); font-weight: 500; }
+
+/* ═══════════════════════════════════════════
+   MOBILE BOTTOM NAV
+═══════════════════════════════════════════ */
+.mob-nav {
+  display: none;
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: rgba(10,22,36,.97);
+  border-top: 1px solid rgba(255,255,255,.08);
+  /* Safe area for iPhone home indicator */
+  padding: 8px 4px env(safe-area-inset-bottom, 12px);
+  z-index: 500;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
+.mob-tabs {
+  display: flex; justify-content: space-around;
+  max-width: 520px; margin: 0 auto;
+}
+
+.mob-tab {
+  background: none; border: none;
+  color: rgba(255,255,255,.36);
+  display: flex; flex-direction: column;
+  align-items: center; gap: 4px;
+  font-size: 10px; font-weight: 600;
+  padding: 8px 10px;
+  border-radius: var(--r12);
+  transition: var(--t-fast);
+  letter-spacing: .3px;
+  min-width: 54px; position: relative;
+}
+.mob-tab i { font-size: 24px; line-height: 1; }
+
+.mob-tab.active { color: var(--green); }
+.mob-tab.active i { filter: drop-shadow(0 0 6px rgba(0,196,106,.5)); }
+
+/* Active indicator pill on top */
+.mob-tab.active::before {
+  content: '';
+  position: absolute; top: -8px; left: 50%;
+  transform: translateX(-50%);
+  width: 28px; height: 3px;
+  background: var(--green);
+  border-radius: 0 0 var(--r4) var(--r4);
+  box-shadow: 0 0 8px rgba(0,196,106,.6);
+}
+
+/* ═══════════════════════════════════════════
+   CONTENT / LAYOUT
+═══════════════════════════════════════════ */
+.content {
+  max-width: 1100px; margin: 0 auto;
+  padding: 24px;
+  padding-bottom: 90px;
+}
+
+.page { display: none; }
+.page.active {
+  display: block;
+  animation: fadeUp .28s ease both;
+}
+
+/* ═══════════════════════════════════════════
+   COMPONENTS — SECTION TITLE
+═══════════════════════════════════════════ */
+.sec-title {
+  font-family: var(--fD);
+  font-size: 24px; color: var(--navy);
+  letter-spacing: .5px; margin-bottom: 16px;
+  display: flex; align-items: center; gap: 10px;
+  flex-wrap: wrap;
+}
+.sec-title i { font-size: 22px; color: var(--green); }
+
+/* ═══════════════════════════════════════════
+   COMPONENTS — TAGS & BADGES
+═══════════════════════════════════════════ */
+.tag {
+  font-family: var(--fB);
+  font-size: 11px; font-weight: 700;
+  padding: 3px 10px; border-radius: var(--rfull);
+  letter-spacing: .3px; white-space: nowrap;
+}
+.tag-green { background: var(--green-l); color: var(--green-d); }
+.tag-clay  { background: var(--clay-l);  color: var(--clay); }
+.tag-gold  { background: rgba(245,197,24,.2); color: var(--gold-d); }
+.tag-navy  { background: var(--navy-l);  color: rgba(255,255,255,.8); }
+
+.badge-ok {
+  display: inline-block;
+  font-size: 10px; font-weight: 700;
+  padding: 3px 10px; border-radius: var(--rfull);
+  background: var(--green-l); color: var(--green-d);
+  white-space: nowrap;
+}
+.badge-pend {
+  display: inline-block;
+  font-size: 10px; font-weight: 700;
+  padding: 3px 10px; border-radius: var(--rfull);
+  background: rgba(245,197,24,.15); color: var(--gold-d);
+  white-space: nowrap;
+}
+.badge-cont {
+  display: inline-block;
+  font-size: 10px; font-weight: 700;
+  padding: 3px 10px; border-radius: var(--rfull);
+  background: var(--red-l); color: var(--red);
+  white-space: nowrap;
+}
+
+/* ═══════════════════════════════════════════
+   COMPONENTS — CARD
+═══════════════════════════════════════════ */
+.card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--r16); padding: 20px;
+  box-shadow: var(--sh-sm);
+  transition: var(--t-base);
+}
+.card + .card { margin-top: 16px; }
+.card:hover { box-shadow: var(--sh-md); }
+
+/* ═══════════════════════════════════════════
+   COMPONENTS — BUTTONS
+═══════════════════════════════════════════ */
+.btn {
+  padding: 10px 20px;
+  border-radius: var(--r8);
+  border: 1.5px solid transparent;
+  font-size: 13px; font-weight: 600;
+  display: inline-flex; align-items: center; gap: 7px;
+  transition: var(--t-fast);
+  cursor: pointer; white-space: nowrap;
+}
+.btn i { font-size: 16px; }
+.btn:active { transform: scale(.96); }
+
+.btn-green {
+  background: var(--green); color: var(--navy);
+  border-color: var(--green);
+  box-shadow: 0 2px 10px rgba(0,196,106,.28);
+}
+.btn-green:hover {
+  background: var(--green-d); border-color: var(--green-d);
+  box-shadow: 0 4px 18px rgba(0,196,106,.4);
+  transform: translateY(-1px);
+}
+
+.btn-navy {
+  background: var(--navy); color: var(--white);
+  border-color: var(--navy);
+}
+.btn-navy:hover { background: var(--navy-l); }
+
+.btn-clay {
+  background: var(--clay); color: var(--white);
+  border-color: var(--clay);
+  box-shadow: 0 2px 10px rgba(200,90,26,.22);
+}
+.btn-clay:hover { filter: brightness(1.1); transform: translateY(-1px); }
+
+.btn-outline {
+  background: transparent; color: var(--text2);
+  border-color: var(--border);
+}
+.btn-outline:hover {
+  border-color: var(--green-d); color: var(--green-d);
+  background: var(--green-l);
+}
+
+.btn-sm { padding: 6px 14px; font-size: 12px; }
+.btn-sm i { font-size: 14px; }
+
+/* ═══════════════════════════════════════════
+   COMPONENTS — FORMS
+═══════════════════════════════════════════ */
+.form-grid   { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.form-grid.g3 { grid-template-columns: 1fr 1fr 1fr; }
+.fg { display: flex; flex-direction: column; gap: 6px; }
+.fg.full { grid-column: 1 / -1; }
+
+.fg label {
+  font-size: 11px; font-weight: 700;
+  color: var(--text2);
+  text-transform: uppercase; letter-spacing: .5px;
+}
+.fg input, .fg select, .fg textarea {
+  border: 1.5px solid var(--border);
+  border-radius: var(--r8);
+  padding: 10px 14px;
+  font-size: 14px; color: var(--text);
+  background: var(--white);
+  outline: none; transition: var(--t-fast);
+}
+.fg input:focus, .fg select:focus, .fg textarea:focus {
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px rgba(0,196,106,.13);
+}
+.fg textarea { min-height: 80px; resize: vertical; }
+
+/* ═══════════════════════════════════════════
+   COMPONENTS — DIVIDER & LIST ITEMS
+═══════════════════════════════════════════ */
+.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+
+.list-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 11px 0; border-bottom: 1px solid var(--border);
+}
+.list-item:last-child  { border-bottom: none; padding-bottom: 0; }
+.list-item:first-child { padding-top: 0; }
+.li-main  { font-size: 13px; font-weight: 500; color: var(--text); }
+.li-sub   { font-size: 11px; color: var(--text3); margin-top: 2px; }
+.li-right { font-size: 11px; color: var(--text3); white-space: nowrap; padding-left: 12px; }
+.score-w  { color: var(--green-d); font-weight: 700; }
+.score-l  { color: var(--clay);    font-weight: 700; }
+
+/* Two-column layout */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+/* ═══════════════════════════════════════════
+   PAGE — DASHBOARD
+═══════════════════════════════════════════ */
+.hero-banner {
+  background: var(--navy);
+  border-radius: var(--r20);
+  padding: 30px 32px;
+  margin-bottom: 20px;
+  display: flex; justify-content: space-between; align-items: flex-end;
+  position: relative; overflow: hidden;
+  box-shadow: var(--sh-lg);
+}
+
+/* Multi-layer gradient depth */
+.hero-banner::before {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 70% 90% at -5% 110%, rgba(0,196,106,.22) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 60% at 110%   0%, rgba(200,90,26,.14) 0%, transparent 55%),
+    radial-gradient(ellipse 40% 40% at  60% 120%, rgba(245,197,24,.07) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+/* Subtle grid lines on right side */
+.hero-banner::after {
+  content: '';
+  position: absolute; right: 0; top: 0;
+  width: 260px; height: 100%;
+  background-image:
+    linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px);
+  background-size: 26px 26px;
+  pointer-events: none;
+}
+
+.hero-left { position: relative; z-index: 1; }
+.hero-title {
+  font-family: var(--fD);
+  font-size: 46px; color: var(--white);
+  letter-spacing: 1px; line-height: 1;
+}
+.hero-title em { color: var(--green); font-style: normal; }
+.hero-sub { color: rgba(255,255,255,.36); font-size: 12px; margin-top: 6px; }
+
+.hero-stats { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
+
+.hs-item {
+  display: flex; flex-direction: column;
+  background: rgba(255,255,255,.07);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: var(--r12);
+  padding: 10px 16px; min-width: 70px;
+  backdrop-filter: blur(4px);
+}
+.hs-val {
+  font-family: var(--fD);
+  font-size: 30px; color: var(--green);
+  line-height: 1; letter-spacing: .3px;
+}
+.hs-lbl {
+  font-size: 10px; color: rgba(255,255,255,.32);
+  text-transform: uppercase; letter-spacing: .5px;
+  margin-top: 4px; font-weight: 600;
+}
+
+.hero-right { text-align: right; position: relative; z-index: 1; flex-shrink: 0; }
+.event-status {
+  font-size: 10px; font-weight: 700;
+  padding: 4px 12px; border-radius: var(--rfull);
+  margin-bottom: 8px; display: inline-block;
+  letter-spacing: .6px;
+}
+.ev-active {
+  background: rgba(0,196,106,.2); color: var(--green);
+  animation: pulse-dot 2.2s infinite;
+}
+.ev-name {
+  font-family: var(--fD);
+  font-size: 22px; color: var(--white); letter-spacing: 1px;
+}
+.ev-dates { font-size: 11px; color: rgba(255,255,255,.36); margin-top: 4px; }
+.ev-admin { font-size: 11px; color: var(--green); margin-top: 4px; display: flex; align-items: center; gap: 4px; justify-content: flex-end; }
+
+/* Progress cards */
+.prog-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 16px; margin-bottom: 20px;
+}
+.prog-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--r16); padding: 22px;
+  box-shadow: var(--sh-sm);
+  transition: var(--t-base);
+}
+.prog-card:hover { box-shadow: var(--sh-md); transform: translateY(-2px); }
+
+.prog-lbl {
+  font-size: 11px; font-weight: 700; color: var(--text3);
+  text-transform: uppercase; letter-spacing: .5px;
+  margin-bottom: 8px;
+  display: flex; align-items: center; gap: 6px;
+}
+.prog-lbl i { font-size: 15px; }
+
+.prog-val {
+  font-family: var(--fD);
+  font-size: 52px; color: var(--navy);
+  line-height: 1; letter-spacing: -1px;
+}
+.prog-val sup { font-size: 24px; color: var(--text3); vertical-align: top; margin-top: 8px; display: inline-block; }
+
+.prog-bar {
+  height: 8px; background: var(--bg2);
+  border-radius: var(--rfull); margin-top: 16px; overflow: hidden;
+}
+.prog-fill {
+  height: 100%; border-radius: var(--rfull);
+  transition: width 1.5s cubic-bezier(.4,0,.2,1);
+}
+.fill-g { background: linear-gradient(90deg, var(--green-d), var(--green), #00E87C); }
+.fill-c { background: linear-gradient(90deg, #A04010, var(--clay), #E07030); }
+.prog-sub { font-size: 11px; color: var(--text3); margin-top: 8px; }
+
+/* Podium */
+.podium-grid {
+  display: grid; grid-template-columns: repeat(4,1fr);
+  gap: 12px; margin-bottom: 20px;
+}
+.pod-card {
+  background: var(--navy-m);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: var(--r16); padding: 20px 12px;
+  text-align: center; cursor: default;
+  transition: var(--t-base);
+}
+.pod-card:hover { transform: translateY(-5px); }
+
+.pod-card.p1 {
+  border-color: var(--gold);
+  background: linear-gradient(150deg, var(--navy-m), rgba(245,197,24,.10));
+  box-shadow: 0 6px 28px rgba(245,197,24,.15);
+}
+.pod-card.p2 { border-color: rgba(185,195,208,.4); }
+.pod-card.p3 { border-color: rgba(205,127,50,.5); }
+.pod-card.p4 { border-color: rgba(0,196,106,.4); }
+
+.pod-medal { font-size: 30px; margin-bottom: 6px; }
+.pod-pos {
+  font-family: var(--fD); font-size: 28px; letter-spacing: 1px;
+}
+.p1 .pod-pos { color: var(--gold); }
+.p2 .pod-pos { color: rgba(185,195,208,.95); }
+.p3 .pod-pos { color: rgb(205,127,50); }
+.p4 .pod-pos { color: var(--green); }
+.pod-name {
+  font-size: 11px; font-weight: 700;
+  color: rgba(255,255,255,.8); margin-top: 6px;
+  line-height: 1.35; letter-spacing: .1px;
+}
+.pod-pts {
+  font-family: var(--fD); font-size: 22px;
+  color: var(--green); margin-top: 10px; letter-spacing: .5px;
+}
+.pod-diff { font-size: 10px; color: rgba(255,255,255,.27); margin-top: 3px; }
+
+/* ═══════════════════════════════════════════
+   PAGE — RANKING
+═══════════════════════════════════════════ */
+.rank-legend { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 14px; }
+.leg-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text2); }
+.leg-dot { width: 10px; height: 10px; border-radius: var(--r4); flex-shrink: 0; }
+
+.table-wrap {
+  background: var(--white);
+  border-radius: var(--r16);
+  border: 1px solid var(--border);
+  overflow: auto;
+  box-shadow: var(--sh-sm);
+}
+table { width: 100%; border-collapse: collapse; min-width: 700px; }
+
+thead { background: var(--navy); position: sticky; top: 0; z-index: 2; }
+thead th {
+  color: rgba(255,255,255,.4);
+  font-size: 10px; font-weight: 700;
+  padding: 12px 10px;
+  text-align: center;
+  text-transform: uppercase; letter-spacing: .6px;
+  white-space: nowrap;
+}
+thead th.name-th { text-align: left; padding-left: 16px; }
+
+tbody tr { border-bottom: 1px solid var(--border); transition: background .12s; }
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: var(--bg) !important; }
+
+td {
+  padding: 11px 10px;
+  text-align: center;
+  font-size: 13px; color: var(--text2);
+}
+td.name-td {
+  text-align: left; padding-left: 16px;
+  font-weight: 600; color: var(--text); white-space: nowrap;
+}
+
+.rk-num {
+  font-family: var(--fD); font-size: 20px;
+  width: 34px;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.rk-1   { color: var(--gold); }
+.rk-2   { color: rgb(185,195,208); }
+.rk-3   { color: rgb(205,127,50); }
+.rk-top { color: var(--green-d); }
+.rk-mid { color: var(--text); }
+.rk-bot { color: var(--clay); }
+
+tr.t-podium { background: rgba(245,197,24,.05); }
+tr.t-class  { background: rgba(0,196,106,.03); }
+tr.t-danger { background: rgba(200,90,26,.04); }
+
+.zone-tag {
+  font-size: 9px; font-weight: 700;
+  padding: 2px 8px; border-radius: var(--rfull);
+  letter-spacing: .3px; white-space: nowrap;
+}
+.zt-p { background: rgba(245,197,24,.2); color: var(--gold-d); }
+.zt-c { background: var(--green-l); color: var(--green-d); }
+.zt-d { background: var(--clay-l); color: var(--clay); }
+
+.pts-big { font-family: var(--fD); font-size: 18px; color: var(--navy); }
+.taxa-tag {
+  font-size: 10px;
+  background: var(--green-l); color: var(--green-d);
+  padding: 2px 7px; border-radius: var(--rfull);
+  font-weight: 700; white-space: nowrap;
+}
+.ss-pos { color: var(--green-d); font-weight: 700; }
+.ss-neg { color: var(--clay);    font-weight: 700; }
+
+.rank-foot { font-size: 11px; color: var(--text3); margin-top: 10px; line-height: 1.9; }
+
+/* ═══════════════════════════════════════════
+   PAGE — RESULTADOS
+═══════════════════════════════════════════ */
+.match-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--r16); padding: 22px;
+  margin-bottom: 16px;
+  box-shadow: var(--sh-sm);
+}
+.mc-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 16px; flex-wrap: wrap; gap: 8px;
+}
+.mc-event { font-size: 12px; color: var(--text3); display: flex; align-items: center; gap: 5px; }
+
+.mc-players { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
+.mc-player { flex: 1; }
+.mc-player select {
+  width: 100%;
+  border: 1.5px solid var(--border); border-radius: var(--r8);
+  padding: 10px 12px;
+  font-size: 14px; font-weight: 600;
+  outline: none; transition: var(--t-fast);
+  background: var(--white); color: var(--text);
+}
+.mc-player select:focus {
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px rgba(0,196,106,.13);
+}
+.mc-player-lbl { font-size: 10px; color: var(--text3); margin-top: 4px; text-align: center; }
+.mc-vs {
+  font-family: var(--fD); font-size: 28px; color: var(--clay);
+  flex-shrink: 0; letter-spacing: 1px;
+}
+
+.sets-row {
+  display: flex; gap: 16px;
+  justify-content: center; align-items: flex-end;
+  margin: 16px 0; flex-wrap: wrap;
+}
+.set-block { text-align: center; }
+.set-block label {
+  font-size: 10px; font-weight: 700; color: var(--text3);
+  text-transform: uppercase; letter-spacing: .3px;
+  display: block; margin-bottom: 7px;
+}
+.set-inputs { display: flex; gap: 6px; align-items: center; }
+.set-input {
+  width: 52px; height: 52px;
+  text-align: center;
+  font-family: var(--fD);
+  font-size: 24px; font-weight: 700; color: var(--navy);
+  border: 2px solid var(--border);
+  border-radius: var(--r12); outline: none;
+  transition: var(--t-fast);
+}
+.set-input:focus {
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px rgba(0,196,106,.13);
+}
+.set-sep { font-size: 16px; color: var(--text3); font-weight: 700; }
+
+.mc-actions { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; margin-top: 4px; }
+
+.pend-list { display: flex; flex-direction: column; gap: 12px; }
+.pend-card {
+  background: var(--white);
+  border: 1.5px solid var(--border);
+  border-left: 4px solid var(--clay);
+  border-radius: var(--r12); padding: 16px;
+  display: flex; justify-content: space-between;
+  align-items: center; gap: 12px;
+  box-shadow: var(--sh-xs);
+  transition: var(--t-fast);
+}
+.pend-card:hover { box-shadow: var(--sh-sm); }
+.pend-card.confirmed { border-left-color: var(--green); }
+.pend-info { flex: 1; }
+.pend-match { font-size: 14px; font-weight: 600; color: var(--text); }
+.pend-meta  { font-size: 11px; color: var(--text3); margin-top: 3px; }
+.pend-btns  { display: flex; gap: 8px; flex-shrink: 0; }
+
+/* ═══════════════════════════════════════════
+   PAGE — CADASTRO
+═══════════════════════════════════════════ */
+.role-toggle { display: flex; gap: 12px; margin-bottom: 20px; }
+.role-btn {
+  flex: 1; padding: 18px 14px;
+  border: 2px solid var(--border);
+  border-radius: var(--r16);
+  background: var(--white); text-align: center;
+  cursor: pointer; transition: var(--t-base);
+  box-shadow: var(--sh-xs);
+}
+.role-btn:hover { border-color: var(--green-d); box-shadow: var(--sh-sm); }
+.role-btn.active {
+  border-color: var(--green); background: var(--green-l);
+  box-shadow: 0 0 0 3px rgba(0,196,106,.15), var(--sh-sm);
+}
+.role-btn i    { font-size: 26px; color: var(--text3); display: block; margin-bottom: 8px; }
+.role-btn.active i { color: var(--green); }
+.role-btn span { font-size: 13px; font-weight: 700; color: var(--text2); }
+.role-btn.active span { color: var(--green-d); }
+.role-btn p    { font-size: 11px; color: var(--text3); margin-top: 4px; }
+
+/* ═══════════════════════════════════════════
+   PAGE — EVENTOS
+═══════════════════════════════════════════ */
+.ev-table-wrap {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--r16); overflow: auto;
+  box-shadow: var(--sh-sm);
+}
+.ev-table-wrap table   { min-width: 600px; }
+.ev-table-wrap thead th { padding: 11px 14px; font-size: 10px; }
+.ev-table-wrap td      { padding: 11px 14px; }
+.ev-table-wrap td:first-child { font-weight: 600; color: var(--text); }
+
+/* ═══════════════════════════════════════════
+   MODAL
+═══════════════════════════════════════════ */
+.modal-bg {
+  position: fixed; inset: 0; z-index: 800;
+  background: rgba(11,25,39,.82);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 16px;
+}
+.modal-box {
+  background: var(--white);
+  border-radius: var(--r24);
+  width: 760px; max-width: 100%; max-height: 90vh;
+  overflow-y: auto; padding: 32px;
+  box-shadow: var(--sh-xl);
+  animation: fadeUp .3s ease both;
+}
+.modal-title {
+  font-family: var(--fD); font-size: 28px;
+  color: var(--navy); margin-bottom: 22px;
+  letter-spacing: .5px;
+  display: flex; align-items: center; gap: 10px;
+}
+.type-pick {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 12px; margin-bottom: 20px;
+}
+.type-opt {
+  padding: 18px; border: 2px solid var(--border);
+  border-radius: var(--r12); cursor: pointer;
+  transition: var(--t-base); text-align: center;
+}
+.type-opt:hover, .type-opt.sel {
+  border-color: var(--green); background: var(--green-l);
+}
+.type-opt .to-icon  { font-size: 34px; margin-bottom: 8px; }
+.type-opt .to-name  { font-size: 15px; font-weight: 700; color: var(--text); }
+.type-opt.sel .to-name { color: var(--green-d); }
+.type-opt .to-sub   { font-size: 11px; color: var(--text3); margin-top: 3px; }
+
+.rules-list { display: flex; flex-direction: column; gap: 8px; margin: 12px 0; }
+.rule-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px; border: 1px solid var(--border);
+  border-radius: var(--r8); background: var(--bg);
+  cursor: pointer; transition: var(--t-fast);
+}
+.rule-row:hover { border-color: var(--green-d); background: var(--green-l); }
+.rule-row input[type=checkbox] { accent-color: var(--green); width: 16px; height: 16px; flex-shrink: 0; }
+.rule-text { font-size: 13px; color: var(--text); flex: 1; }
+
+.criteria-list {
+  display: flex; flex-direction: column; gap: 6px;
+  max-height: 320px; overflow-y: auto; padding-right: 6px;
+}
+.crit-row {
+  display: grid;
+  grid-template-columns: auto 1fr 1.5fr 52px;
+  align-items: center; gap: 10px;
+  padding: 8px 12px; border: 1px solid var(--border);
+  border-radius: var(--r8); font-size: 13px;
+  transition: background .12s;
+}
+.crit-row:hover { background: var(--bg); }
+.crit-row input[type=checkbox] { accent-color: var(--green); width: 15px; height: 15px; }
+.crit-name { font-weight: 500; color: var(--text); }
+.crit-tie  { font-size: 11px; color: var(--text3); }
+.crit-seq {
+  width: 44px; padding: 4px 6px;
+  border: 1px solid var(--border); border-radius: 6px;
+  font-size: 12px; text-align: center; outline: none;
+}
+.crit-seq:focus { border-color: var(--green); }
+
+.modal-footer {
+  display: flex; gap: 10px; justify-content: flex-end;
+  margin-top: 24px; padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+/* ═══════════════════════════════════════════
+   CONFIRMAÇÃO EM 3 ETAPAS
+═══════════════════════════════════════════ */
+.flow-steps {
+  display: flex; align-items: center; gap: 6px;
+  margin-bottom: 22px; flex-wrap: wrap;
+}
+.flow-step {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12px; font-weight: 700; color: var(--text3);
+  padding: 8px 16px;
+  background: var(--white);
+  border: 1.5px solid var(--border);
+  border-radius: var(--rfull);
+  white-space: nowrap;
+  box-shadow: var(--sh-xs);
+  transition: var(--t-base);
+}
+.flow-step.done {
+  background: var(--green-l);
+  border-color: var(--green-d);
+  color: var(--green-d);
+}
+.flow-step.active {
+  background: var(--navy);
+  border-color: var(--navy);
+  color: var(--white);
+}
+.step-num {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 20px; height: 20px; border-radius: 50%;
+  background: rgba(255,255,255,.15);
+  font-size: 10px; flex-shrink: 0;
+}
+.flow-step.done  .step-num { background: var(--green-d); color: var(--white); }
+.flow-step.active .step-num { background: var(--green);    color: var(--navy); }
+.flow-step.pending .step-num { background: var(--bg2);      color: var(--text3); }
+.flow-arrow { color: var(--border2); font-size: 18px; flex-shrink: 0; font-weight: 300; }
+
+/* Game-confirm card */
+.game-confirm-card {
+  background: var(--white);
+  border: 1.5px solid var(--border);
+  border-left: 4px solid var(--navy-l);
+  border-radius: var(--r12); padding: 16px;
+  display: flex; justify-content: space-between;
+  align-items: center; gap: 12px;
+  box-shadow: var(--sh-xs); transition: var(--t-fast);
+  margin-bottom: 10px;
+}
+.game-confirm-card:hover { box-shadow: var(--sh-sm); }
+.game-confirm-card.both-ok { border-left-color: var(--green); }
+.game-confirm-card.my-ok   { border-left-color: var(--gold); }
+
+.conf-status-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 7px; align-items: center; }
+
+/* ═══════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════ */
+.toast {
+  position: fixed; bottom: 96px; left: 50%;
+  transform: translateX(-50%) translateY(16px);
+  background: var(--navy); color: var(--white);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: var(--rfull);
+  padding: 11px 22px;
+  font-size: 13px; font-weight: 500;
+  opacity: 0; transition: var(--t-base); z-index: 1000;
+  display: flex; align-items: center; gap: 8px;
+  white-space: nowrap; max-width: 90vw;
+  box-shadow: var(--sh-lg);
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast i { font-size: 16px; color: var(--green); }
+
+/* ═══════════════════════════════════════════
+   ATHLETE MODE — DASHBOARD PERSONALIZADO
+═══════════════════════════════════════════ */
+.athlete-only { display: none; }
+body.athlete-mode .athlete-only { display: block; }
+body.athlete-mode .athlete-flex { display: flex !important; }
+
+/* Card "Minha Situação" */
+.my-pos-card {
+  background: var(--navy);
+  border-radius: var(--r20);
+  padding: 26px 28px;
+  margin-bottom: 20px;
+  display: flex; justify-content: space-between;
+  align-items: flex-start; gap: 24px; flex-wrap: wrap;
+  position: relative; overflow: hidden;
+  box-shadow: var(--sh-lg);
+}
+.my-pos-card::before {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 65% 80% at -5% 110%, rgba(0,196,106,.20) 0%, transparent 55%),
+    radial-gradient(ellipse 45% 55% at 110%   0%, rgba(245,197,24,.10) 0%, transparent 55%);
+  pointer-events: none;
+}
+.my-pos-left, .my-pos-right { position: relative; z-index: 1; }
+.my-pos-right { flex-shrink: 0; text-align: right; }
+
+.my-pos-name {
+  font-family: var(--fD); font-size: 28px;
+  color: var(--white); letter-spacing: 1px; line-height: 1;
+}
+.my-pos-sub { font-size: 11px; color: rgba(255,255,255,.35); margin-top: 5px; }
+
+.my-pos-stats {
+  display: flex; gap: 6px; margin-top: 18px; flex-wrap: wrap;
+}
+.my-stat {
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: var(--r12); padding: 10px 14px;
+  text-align: center; min-width: 64px;
+}
+.my-stat-val {
+  font-family: var(--fD); font-size: 26px;
+  color: var(--white); line-height: 1;
+}
+.my-stat-lbl {
+  font-size: 9px; font-weight: 700;
+  color: rgba(255,255,255,.3);
+  text-transform: uppercase; letter-spacing: .5px;
+  margin-top: 4px;
+}
+
+.my-pos-gap { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+.gap-chip {
+  font-size: 11px; font-weight: 700;
+  padding: 4px 12px; border-radius: var(--rfull);
+  letter-spacing: .2px;
+}
+.gap-leader { background: rgba(245,197,24,.2); color: var(--gold); }
+.gap-above  { background: rgba(0,196,106,.15); color: var(--green); }
+.gap-below  { background: rgba(255,255,255,.08); color: rgba(255,255,255,.5); }
+
+.my-next-lbl   { font-size: 10px; font-weight: 700; color: rgba(255,255,255,.35); text-transform: uppercase; letter-spacing: .5px; }
+.my-next-match { font-family: var(--fD); font-size: 20px; color: var(--white); margin-top: 6px; letter-spacing: .5px; }
+.my-next-date  { font-size: 11px; color: rgba(255,255,255,.4); margin-top: 4px; }
+.my-pos-taxa   { margin-top: 14px; }
+
+/* Live ranking compacto */
+.live-rank-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--r16); overflow: hidden;
+  box-shadow: var(--sh-sm); margin-bottom: 20px;
+}
+.live-rank-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 16px; border-bottom: 1px solid var(--border);
+  flex-wrap: wrap; gap: 8px;
+}
+.live-rank-title {
+  font-family: var(--fD); font-size: 20px; color: var(--navy);
+  letter-spacing: .5px; display: flex; align-items: center; gap: 8px;
+}
+.live-rank-title i { font-size: 18px; color: var(--green); }
+.live-rank-scroll { overflow-x: auto; }
+.live-rank-table { width: 100%; border-collapse: collapse; min-width: 420px; }
+.live-rank-table thead { background: var(--navy); }
+.live-rank-table thead th {
+  padding: 9px 10px; font-size: 10px; font-weight: 700;
+  color: rgba(255,255,255,.4); text-transform: uppercase;
+  letter-spacing: .5px; text-align: center; white-space: nowrap;
+}
+.live-rank-table thead th:nth-child(2) { text-align: left; padding-left: 14px; }
+.live-rank-table tbody tr {
+  border-bottom: 1px solid var(--border); transition: background .12s;
+}
+.live-rank-table tbody tr:last-child { border-bottom: none; }
+.live-rank-table tbody tr:hover { background: var(--bg); }
+.live-rank-table tbody tr.is-me {
+  background: rgba(0,196,106,.08) !important;
+  border-left: 3px solid var(--green);
+}
+.live-rank-table td {
+  padding: 9px 10px; text-align: center;
+  font-size: 13px; color: var(--text2);
+}
+.live-rank-table td:nth-child(2) {
+  text-align: left; padding-left: 14px;
+  font-weight: 600; color: var(--text); white-space: nowrap;
+}
+.lr-pos { font-family: var(--fD); font-size: 18px; }
+.lr-pts { font-family: var(--fD); font-size: 17px; color: var(--navy); font-weight: 700; }
+.me-badge {
+  font-size: 9px; font-weight: 700; padding: 2px 7px;
+  background: var(--green); color: var(--navy);
+  border-radius: var(--rfull); margin-left: 6px;
+  vertical-align: middle; letter-spacing: .3px;
+}
+
+/* ═══════════════════════════════════════════
+   FOTO DE PERFIL — CADASTRO
+═══════════════════════════════════════════ */
+.photo-section {
+  display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap;
+}
+/* Circle preview */
+.photo-circle {
+  width: 120px; height: 120px; border-radius: 50%;
+  background: var(--navy-l);
+  border: 3px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden; position: relative; flex-shrink: 0;
+  transition: var(--t-base);
+}
+.photo-circle.sel {
+  border-color: var(--green);
+  box-shadow: 0 0 0 4px rgba(0,196,106,.18);
+}
+.photo-circle img  { width: 100%; height: 100%; object-fit: cover; display: none; }
+.photo-init {
+  font-family: var(--fD); font-size: 40px; color: rgba(255,255,255,.7);
+  letter-spacing: 1px; line-height: 1; user-select: none;
+  pointer-events: none;
+}
+.photo-left { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.photo-clear-btn {
+  font-size: 11px; font-weight: 600; color: var(--text3);
+  cursor: pointer; display: none; align-items: center; gap: 4px;
+  background: none; border: 1px solid var(--border);
+  border-radius: var(--rfull); padding: 4px 12px;
+  transition: var(--t-fast);
+}
+.photo-clear-btn:hover { border-color: var(--red); color: var(--red); }
+/* Right panel */
+.photo-right { flex: 1; min-width: 240px; }
+/* Tabs */
+.photo-tabs { display: flex; gap: 6px; margin-bottom: 14px; }
+.photo-tab {
+  flex: 1; padding: 9px 8px;
+  border: 1.5px solid var(--border); border-radius: var(--r8);
+  background: var(--white); font-size: 12px; font-weight: 600;
+  color: var(--text2); cursor: pointer; transition: var(--t-fast);
+  text-align: center; display: flex; align-items: center;
+  justify-content: center; gap: 5px; white-space: nowrap;
+}
+.photo-tab i { font-size: 15px; }
+.photo-tab:hover  { border-color: var(--green-d); color: var(--green-d); }
+.photo-tab.active { border-color: var(--green); background: var(--green-l); color: var(--green-d); }
+/* Areas */
+.photo-area         { display: none; }
+.photo-area.active  { display: block; }
+/* Camera */
+.cam-wrap {
+  background: var(--navy);
+  border-radius: var(--r12); overflow: hidden;
+  position: relative; width: 100%; aspect-ratio: 4/3;
+  max-height: 180px;
+  display: flex; align-items: center; justify-content: center;
+}
+.cam-wrap video { width: 100%; height: 100%; object-fit: cover; display: none; }
+.cam-placeholder {
+  color: rgba(255,255,255,.3);
+  font-size: 12px; text-align: center;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  pointer-events: none;
+}
+.cam-placeholder i { font-size: 36px; }
+.cam-controls { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+/* File drop */
+.file-drop {
+  border: 2px dashed var(--border2);
+  border-radius: var(--r12); padding: 28px 16px;
+  text-align: center; cursor: pointer; transition: var(--t-base);
+}
+.file-drop:hover, .file-drop.drag-over {
+  border-color: var(--green); background: var(--green-l);
+}
+.file-drop i { font-size: 34px; color: var(--text3); display: block; margin-bottom: 8px; }
+.file-drop p { font-size: 12px; color: var(--text3); line-height: 1.6; }
+.file-drop strong { color: var(--green-d); }
+/* Avatar grid */
+.avatar-grid {
+  display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px;
+}
+.avatar-opt {
+  aspect-ratio: 1; border-radius: var(--r8); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; border: 2px solid transparent;
+  transition: var(--t-fast); user-select: none;
+}
+.avatar-opt:hover { transform: scale(1.12); filter: brightness(1.08); }
+.avatar-opt.sel   {
+  border-color: var(--white);
+  box-shadow: 0 0 0 3px var(--green);
+  transform: scale(1.1);
+}
+/* Mobile */
+@media (max-width: 600px) {
+  .photo-circle  { width: 90px; height: 90px; }
+  .photo-init    { font-size: 30px; }
+  .avatar-grid   { grid-template-columns: repeat(4, 1fr); }
+  .photo-tabs    { gap: 4px; }
+  .photo-tab     { font-size: 11px; padding: 8px 4px; }
+}
+
+/* ═══════════════════════════════════════════
+   ADMIN MODE
+═══════════════════════════════════════════ */
+/* Colunas e elementos só visíveis para admin */
+.admin-col  { display: none; }
+.admin-blk  { display: none !important; }
+body.admin-mode .admin-col { display: table-cell; }
+body.admin-mode .admin-blk { display: inline-flex !important; }
+
+/* Faixa discreta indicando modo admin */
+.admin-bar {
+  display: none;
+  background: rgba(245,197,24,.12);
+  border-bottom: 1px solid rgba(245,197,24,.25);
+  padding: 6px 24px;
+  font-size: 11px; font-weight: 700;
+  color: var(--gold-d);
+  letter-spacing: .4px;
+  align-items: center; gap: 8px;
+}
+body.admin-mode .admin-bar { display: flex; }
+
+/* Modal de confirmação de exclusão */
+.del-modal-bg {
+  position: fixed; inset: 0; z-index: 900;
+  background: rgba(11,25,39,.82);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 16px;
+}
+.del-modal-box {
+  background: var(--white);
+  border-radius: var(--r20);
+  width: 400px; max-width: 95vw;
+  padding: 32px 28px; text-align: center;
+  box-shadow: var(--sh-xl);
+  animation: fadeUp .25s ease both;
+}
+.del-icon {
+  width: 60px; height: 60px; border-radius: 50%;
+  background: var(--red-l);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 16px;
+}
+.del-icon i { font-size: 28px; color: var(--red); }
+.del-title {
+  font-family: var(--fD); font-size: 26px;
+  color: var(--navy); letter-spacing: .5px; margin-bottom: 8px;
+}
+.del-desc {
+  font-size: 13px; color: var(--text2);
+  line-height: 1.6; margin-bottom: 24px;
+}
+.del-desc strong { color: var(--text); }
+.del-actions {
+  display: flex; gap: 10px; justify-content: center;
+}
+.btn-danger {
+  background: var(--red); color: var(--white);
+  border: 1.5px solid var(--red);
+  box-shadow: 0 2px 10px rgba(224,53,53,.28);
+}
+.btn-danger:hover { filter: brightness(1.08); transform: translateY(-1px); }
+
+/* ═══════════════════════════════════════════
+   RESPONSIVE — TABLET
+═══════════════════════════════════════════ */
+@media (max-width: 900px) {
+  .podium-grid { grid-template-columns: 1fr 1fr; }
+  .form-grid.g3 { grid-template-columns: 1fr 1fr; }
+}
+
+/* ═══════════════════════════════════════════
+   RESPONSIVE — MOBILE
+═══════════════════════════════════════════ */
+@media (max-width: 768px) {
+  /* Layout */
+  .content { padding: 14px; padding-bottom: 100px; }
+
+  /* Nav */
+  .nav-links { display: none; }
+  .nav-right .role-pill { display: none; }
+  .mob-nav { display: block; }
+
+  /* Hero */
+  .hero-banner       { flex-direction: column; align-items: flex-start; gap: 18px; padding: 22px 20px; }
+  .hero-right        { text-align: left; }
+  .ev-admin          { justify-content: flex-start; }
+  .hero-title        { font-size: 40px; }
+  .hero-stats        { gap: 8px; }
+  .hs-item           { padding: 8px 12px; min-width: 62px; }
+  .hs-val            { font-size: 26px; }
+
+  /* Grids */
+  .prog-grid         { grid-template-columns: 1fr; gap: 12px; }
+  .podium-grid       { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .two-col           { grid-template-columns: 1fr; }
+  .form-grid         { grid-template-columns: 1fr; }
+  .form-grid.g3      { grid-template-columns: 1fr; }
+  .fg.full           { grid-column: 1; }
+
+  /* Progress values */
+  .prog-val          { font-size: 44px; }
+
+  /* Match form */
+  .mc-players        { flex-direction: column; gap: 10px; }
+  .mc-vs             { align-self: center; margin: 0; }
+  .sets-row          { gap: 12px; }
+
+  /* Pend card */
+  .pend-card         { flex-direction: column; align-items: flex-start; }
+  .pend-btns         { width: 100%; }
+  .pend-btns .btn    { flex: 1; justify-content: center; }
+
+  /* Role toggle */
+  .role-toggle       { gap: 8px; }
+  .role-btn          { padding: 14px 10px; }
+
+  /* Modal: bottom sheet */
+  .modal-bg          { align-items: flex-end; padding: 0; }
+  .modal-box         { border-radius: var(--r24) var(--r24) 0 0; max-height: 92vh; padding: 24px 18px; }
+  .crit-row          { grid-template-columns: auto 1fr 44px; gap: 8px; }
+  .crit-tie          { display: none; }
+
+  /* Podium */
+  .pod-card          { padding: 14px 8px; }
+  .pod-name          { font-size: 10px; }
+  .pod-pos           { font-size: 22px; }
+}
+
+/* ═══════════════════════════════════════════
+   RESPONSIVE — SMALL PHONES
+═══════════════════════════════════════════ */
+@media (max-width: 480px) {
+  .hero-title    { font-size: 34px; }
+  .hero-banner   { padding: 18px 16px; }
+  .login-box     { padding: 36px 22px; }
+  .login-logo    { font-size: 54px; }
+  .sec-title     { font-size: 20px; }
+  .set-input     { width: 46px; height: 46px; font-size: 20px; }
+  .podium-grid   { gap: 8px; }
+  .hero-stats    { gap: 6px; }
+  .hs-item       { min-width: 56px; padding: 7px 10px; }
+  .hs-val        { font-size: 22px; }
+}
+
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════ LOGIN ════════════════════════ -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">LIGA<em>PRO</em></div>
+    <div class="login-badge">🎾 Plataforma de Tênis Recreativo</div>
+    <div class="login-field">
+      <label>E-mail</label>
+      <input type="email" id="lEmail" value="josias@ligaleao.com" placeholder="seuemail@exemplo.com">
+    </div>
+    <div class="login-field">
+      <label>Senha</label>
+      <input type="password" id="lPass" value="123456" placeholder="••••••••">
+    </div>
+    <button class="login-btn" onclick="doLogin()">Entrar na Liga</button>
+    <div class="login-demo">
+      <strong>Contas demo disponíveis:</strong><br>
+      🎾 Atleta: josias@ligaleao.com / 123456<br>
+      🛡️ Admin: admin@ligaleao.com / admin123
+    </div>
+    <div class="login-link">Primeiro acesso? <span onclick="goRegister()">Crie sua conta</span></div>
+  </div>
+</div>
+
+<!-- ════════════════════════ APP SHELL ════════════════════════ -->
+<div id="appShell">
+
+  <!-- ADMIN BAR (visível só no modo admin) -->
+  <div class="admin-bar">
+    <i class="ti ti-shield-star"></i> MODO ADMINISTRADOR — Academia Leão &nbsp;·&nbsp; Ações destrutivas estão habilitadas
+  </div>
+
+  <!-- TOP NAV -->
+  <nav class="topnav">
+    <div class="nav-brand">LIGA<em>PRO</em></div>
+    <div class="nav-links">
+      <button class="nav-link active" onclick="nav('dashboard',this)"><i class="ti ti-dashboard"></i>Dashboard</button>
+      <button class="nav-link" onclick="nav('ranking',this)"><i class="ti ti-medal"></i>Ranking</button>
+      <button class="nav-link" onclick="nav('resultados',this)"><i class="ti ti-clipboard-list"></i>Resultados</button>
+      <button class="nav-link" onclick="nav('cadastro',this)"><i class="ti ti-user-plus"></i>Cadastro</button>
+      <button class="nav-link" id="navEventos" style="display:none" onclick="nav('eventos',this)"><i class="ti ti-calendar-event"></i>Eventos</button>
+    </div>
+    <div class="nav-right">
+      <span class="role-pill role-atleta" id="rolePill">ATLETA</span>
+      <div class="user-chip">
+        <div class="user-av" id="userAv">JM</div>
+        <span class="user-name" id="userName">Josias M.</span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- MOBILE NAV -->
+  <div class="mob-nav">
+    <div class="mob-tabs">
+      <button class="mob-tab active" onclick="nav('dashboard',this)"><i class="ti ti-dashboard"></i>Início</button>
+      <button class="mob-tab" onclick="nav('ranking',this)"><i class="ti ti-medal"></i>Ranking</button>
+      <button class="mob-tab" onclick="nav('resultados',this)"><i class="ti ti-clipboard-list"></i>Resultados</button>
+      <button class="mob-tab" onclick="nav('cadastro',this)"><i class="ti ti-user-circle"></i>Perfil</button>
+      <button class="mob-tab" id="mobEventos" style="display:none" onclick="nav('eventos',this)"><i class="ti ti-calendar-event"></i>Eventos</button>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- ▓▓▓ DASHBOARD ▓▓▓ -->
+    <div class="page active" id="page-dashboard">
+
+      <div class="hero-banner">
+        <div class="hero-left">
+          <div class="hero-title">LIGA<em> MASTER</em></div>
+          <div class="hero-sub">Temporada 2025 · Quadra Rápida & Saibro · Minaçu - GO</div>
+          <div class="hero-stats">
+            <div class="hs-item"><div class="hs-val">14</div><div class="hs-lbl">Atletas</div></div>
+            <div class="hs-item"><div class="hs-val">91</div><div class="hs-lbl">Jogos Prev.</div></div>
+            <div class="hs-item"><div class="hs-val" id="d-real">38</div><div class="hs-lbl">Realizados</div></div>
+            <div class="hs-item"><div class="hs-val" id="d-pend">6</div><div class="hs-lbl">Pendentes</div></div>
+          </div>
+        </div>
+        <div class="hero-right">
+          <div class="event-status ev-active">● EM ANDAMENTO</div>
+          <div class="ev-name">LIGA MASTER 2025</div>
+          <div class="ev-dates">01/05/2025 → 30/11/2025</div>
+          <div class="ev-admin"><i class="ti ti-shield-check"></i> Academia Leão · Carlos Leão (ADM)</div>
+        </div>
+      </div>
+
+      <!-- ── MINHA SITUAÇÃO (só atleta) ── -->
+      <div class="athlete-only" id="myPosSection"></div>
+
+      <div class="prog-grid">
+        <div class="prog-card">
+          <div class="prog-lbl"><i class="ti ti-clock"></i> Progresso Temporal</div>
+          <div class="prog-val" id="tv">21<sup>%</sup></div>
+          <div class="prog-bar"><div class="prog-fill fill-g" id="tb" style="width:0"></div></div>
+          <div class="prog-sub" id="ts">Calculando…</div>
+        </div>
+        <div class="prog-card">
+          <div class="prog-lbl"><i class="ti ti-ball-tennis"></i> Jogos Realizados</div>
+          <div class="prog-val" id="jv">42<sup>%</sup></div>
+          <div class="prog-bar"><div class="prog-fill fill-c" id="jb" style="width:0"></div></div>
+          <div class="prog-sub" id="js">38 de 91 jogos concluídos</div>
+        </div>
+      </div>
+
+      <div class="sec-title"><i class="ti ti-trophy"></i> Pódio da Liga <span class="tag tag-gold">Top 4</span></div>
+      <div class="podium-grid">
+        <div class="pod-card p1"><div class="pod-medal">🥇</div><div class="pod-pos">1°</div><div class="pod-name">JOSIAS MODESTO</div><div class="pod-pts">245 pts</div><div class="pod-diff">+27 pts à frente</div></div>
+        <div class="pod-card p2"><div class="pod-medal">🥈</div><div class="pod-pos">2°</div><div class="pod-name">RAPHAEL TELES</div><div class="pod-pts">218 pts</div><div class="pod-diff">-27 | +21 ao 3°</div></div>
+        <div class="pod-card p3"><div class="pod-medal">🥉</div><div class="pod-pos">3°</div><div class="pod-name">BERNARDO ANTUNES</div><div class="pod-pts">197 pts</div><div class="pod-diff">-21 | +11 ao 4°</div></div>
+        <div class="pod-card p4"><div class="pod-medal">⭐</div><div class="pod-pos">4°</div><div class="pod-name">ANDREY MACHADO</div><div class="pod-pts">186 pts</div><div class="pod-diff">-11 ao 3° lugar</div></div>
+      </div>
+
+      <!-- ── CLASSIFICAÇÃO AO VIVO (só atleta) ── -->
+      <div class="athlete-only" id="liveRankSection"></div>
+
+      <div class="two-col">
+        <div class="card">
+          <div class="sec-title" style="font-size:18px;margin-bottom:12px"><i class="ti ti-calendar-event" style="font-size:17px"></i> Próximos Jogos</div>
+          <div class="list-item"><div><div class="li-main">Josias M. <em style="color:var(--text3)">vs</em> Lorenzo R.</div><div class="li-sub">Liga Master · Rodada 6</div></div><div class="li-right">15/05/25</div></div>
+          <div class="list-item"><div><div class="li-main">Raphael T. <em style="color:var(--text3)">vs</em> Bruno D.</div><div class="li-sub">Liga Master · Rodada 6</div></div><div class="li-right">16/05/25</div></div>
+          <div class="list-item"><div><div class="li-main">Bernardo A. <em style="color:var(--text3)">vs</em> Danilo F.</div><div class="li-sub">Liga Master · Rodada 6</div></div><div class="li-right">18/05/25</div></div>
+          <div class="list-item"><div><div class="li-main">Andrey M. <em style="color:var(--text3)">vs</em> Rone B.</div><div class="li-sub">Liga Master · Rodada 6</div></div><div class="li-right">19/05/25</div></div>
+        </div>
+        <div class="card">
+          <div class="sec-title" style="font-size:18px;margin-bottom:12px"><i class="ti ti-check-circle" style="font-size:17px"></i> Últimos Resultados</div>
+          <div class="list-item"><div><div class="li-main">Josias M. <span class="score-w">6/4 6/3</span> Lorenzo R.</div><div class="li-sub">12/05/25 · Rodada 5</div></div><span class="badge-ok">✓ Confirmado</span></div>
+          <div class="list-item"><div><div class="li-main">Andrey M. <span class="score-w">7/5 6/2</span> Luiz B.</div><div class="li-sub">11/05/25 · Rodada 5</div></div><span class="badge-ok">✓ Confirmado</span></div>
+          <div class="list-item"><div><div class="li-main">Bruno D. <span class="score-l">4/6 3/6</span> Raphael T.</div><div class="li-sub">10/05/25 · Rodada 5</div></div><span class="badge-pend">⏳ Pendente</span></div>
+          <div class="list-item"><div><div class="li-main">Gabriel R. <span class="score-l">3/6 2/6</span> Bernardo A.</div><div class="li-sub">09/05/25 · Rodada 5</div></div><span class="badge-ok">✓ Confirmado</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ▓▓▓ RANKING ▓▓▓ -->
+    <div class="page" id="page-ranking">
+      <div class="sec-title"><i class="ti ti-medal"></i> Ranking Liga Master 2025 <span class="tag tag-green">14 atletas</span></div>
+      <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--r12);padding:14px 16px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;box-shadow:var(--sh-xs)">
+        <div style="font-size:12px;color:var(--text3)"><i class="ti ti-calendar" style="vertical-align:-2px"></i> Encerra em: <strong style="color:var(--text)">30/11/2025</strong> &nbsp;·&nbsp; <i class="ti ti-shield-check" style="vertical-align:-2px"></i> ADM: <strong style="color:var(--text)">Carlos Leão · Academia Leão</strong></div>
+        <div class="rank-legend" style="margin:0">
+          <div class="leg-item"><div class="leg-dot" style="background:rgba(245,197,24,.45)"></div>Pódio Top 4</div>
+          <div class="leg-item"><div class="leg-dot" style="background:rgba(0,196,106,.3)"></div>Classificados 5°–8°</div>
+          <div class="leg-item"><div class="leg-dot" style="background:rgba(200,90,26,.3)"></div>Zona ▼ Bottom 6</div>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Pos</th><th>Taxa</th><th class="name-th">Nome</th>
+              <th>J</th><th>V</th><th>D</th>
+              <th>S.V.</th><th>S.P.</th><th>S.S</th>
+              <th>G.V.</th><th>G.P.</th>
+              <th>Pts</th><th>B/P</th><th>Zona</th><th class="admin-col" style="color:rgba(255,80,80,.7)"><i class="ti ti-trash" style="font-size:13px"></i></th>
+            </tr>
+          </thead>
+          <tbody id="rankBody"></tbody>
+        </table>
+      </div>
+      <div class="rank-foot">
+        <strong>Legenda:</strong> J=Jogos · V=Vitórias · D=Derrotas · S.V.=Sets Vencidos · S.P.=Sets Perdidos · S.S=Saldo de Sets · G.V.=Games Vencidos · G.P.=Games Perdidos · Pts=Pontuação Total · B/P=Byes e W.O. recebidos
+      </div>
+    </div>
+
+    <!-- ▓▓▓ RESULTADOS ▓▓▓ -->
+    <div class="page" id="page-resultados">
+
+      <!-- Pipeline visual de 3 etapas -->
+      <div class="flow-steps">
+        <div class="flow-step done"  id="fs1"><span class="step-num">✓</span> Jogo Confirmado</div>
+        <div class="flow-arrow">›</div>
+        <div class="flow-step active" id="fs2"><span class="step-num">2</span> Lançar Placar</div>
+        <div class="flow-arrow">›</div>
+        <div class="flow-step pending" id="fs3"><span class="step-num">3</span> Adversário Confirma</div>
+      </div>
+
+      <!-- ── ETAPA 1: Confirmar que o jogo aconteceu ── -->
+      <div class="sec-title">
+        <i class="ti ti-calendar-check"></i> Etapa 1 — Confirmar Realização do Jogo
+        <span class="tag tag-navy" id="gameConfirmCount">2 aguardando</span>
+      </div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:12px;padding:10px 14px;background:var(--white);border:1px solid var(--border);border-radius:var(--r8);display:flex;align-items:center;gap:8px;box-shadow:var(--sh-xs)">
+        <i class="ti ti-info-circle" style="color:var(--green);font-size:16px;flex-shrink:0"></i>
+        O jogo só pode ter o placar lançado depois que <strong>ambos os jogadores</strong> confirmam que a partida foi realizada.
+        <span class="admin-blk" style="margin-left:auto;font-size:11px;color:var(--gold-d);align-items:center;gap:4px;white-space:nowrap"><i class="ti ti-shield-star" style="font-size:14px"></i> Admin: clique no 🗑 para excluir um jogo</span>
+      </div>
+      <div id="gameConfirmList"></div>
+
+      <!-- ── ETAPA 2: Lançar placar (só após jogo confirmado) ── -->
+      <div class="sec-title" style="margin-top:24px">
+        <i class="ti ti-clipboard-list"></i> Etapa 2 — Lançar Placar
+      </div>
+      <div class="match-card">
+        <div class="mc-header">
+          <div class="mc-event"><i class="ti ti-calendar-event"></i> Liga Master 2025 · Rodada 6</div>
+          <span class="badge-ok">✓ Jogo confirmado por ambos</span>
+        </div>
+        <div class="mc-players">
+          <div class="mc-player">
+            <select id="p1sel">
+              <option>Josias Modesto (1°)</option>
+              <option>Raphael Teles (2°)</option>
+              <option>Bernardo Antunes (3°)</option>
+              <option>Andrey Machado (4°)</option>
+              <option>Lorenzo Rezende (5°)</option>
+            </select>
+            <div class="mc-player-lbl">Vencedor</div>
+          </div>
+          <div class="mc-vs">VS</div>
+          <div class="mc-player">
+            <select id="p2sel">
+              <option>Lorenzo Rezende (5°)</option>
+              <option>Luiz Brunet (6°)</option>
+              <option>Bruno Daniel (7°)</option>
+              <option>Gabriel Ribeiro (8°)</option>
+              <option>Danilo Fernandes (9°)</option>
+            </select>
+            <div class="mc-player-lbl">Perdedor</div>
+          </div>
+        </div>
+        <div class="sets-row">
+          <div class="set-block">
+            <label>1° Set</label>
+            <div class="set-inputs">
+              <input class="set-input" type="number" min="0" max="7" value="6" id="s1a">
+              <span class="set-sep">×</span>
+              <input class="set-input" type="number" min="0" max="7" value="4" id="s1b">
+            </div>
+          </div>
+          <div class="set-block">
+            <label>2° Set</label>
+            <div class="set-inputs">
+              <input class="set-input" type="number" min="0" max="7" value="7" id="s2a">
+              <span class="set-sep">×</span>
+              <input class="set-input" type="number" min="0" max="7" value="5" id="s2b">
+            </div>
+          </div>
+          <div class="set-block">
+            <label>3° Set (opcional)</label>
+            <div class="set-inputs">
+              <input class="set-input" type="number" min="0" max="7" placeholder="–" id="s3a">
+              <span class="set-sep">×</span>
+              <input class="set-input" type="number" min="0" max="7" placeholder="–" id="s3b">
+            </div>
+          </div>
+        </div>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:12px;padding:9px 12px;background:rgba(245,197,24,.08);border:1px solid rgba(245,197,24,.25);border-radius:var(--r8)">
+          <i class="ti ti-alert-triangle" style="color:var(--gold-d);vertical-align:-2px"></i>
+          Após enviar, o adversário receberá notificação para <strong>confirmar ou contestar</strong> o placar em até 48h.
+        </div>
+        <div class="mc-actions">
+          <button class="btn btn-outline"><i class="ti ti-x"></i> Registrar W.O.</button>
+          <button class="btn btn-green" onclick="sendResult()"><i class="ti ti-send"></i> Enviar para Confirmação do Adversário</button>
+        </div>
+      </div>
+
+      <!-- ── ETAPA 3: Confirmação do placar pelo adversário ── -->
+      <div class="sec-title" style="margin-top:8px">
+        <i class="ti ti-bell"></i> Etapa 3 — Confirmar Placar do Adversário
+        <span class="tag tag-clay" id="pendCount">2 pendentes</span>
+      </div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:12px;padding:10px 14px;background:var(--white);border:1px solid var(--border);border-radius:var(--r8);display:flex;align-items:center;gap:8px;box-shadow:var(--sh-xs)">
+        <i class="ti ti-info-circle" style="color:var(--clay);font-size:16px;flex-shrink:0"></i>
+        Placares abaixo foram lançados pelo adversário. Você tem <strong>48h</strong> para confirmar ou contestar. Sem resposta = confirmação automática.
+      </div>
+      <div class="pend-list" id="pendList">
+        <div class="pend-card" id="pc1">
+          <div class="pend-info">
+            <div class="pend-match">Bruno Daniel <strong style="color:var(--clay)">4/6 &nbsp; 3/6</strong> <strong>Raphael Teles</strong></div>
+            <div class="pend-meta">Lançado por Bruno Daniel · 10/05/2025 · Liga Master 2025</div>
+            <div class="conf-status-row">
+              <span style="font-size:10px;color:var(--text3)">⏱ Expira em: <strong style="color:var(--clay)">28h</strong></span>
+            </div>
+          </div>
+          <div class="pend-btns">
+            <button class="btn btn-green btn-sm" onclick="confirm1()"><i class="ti ti-check"></i> Confirmar</button>
+            <button class="btn btn-outline btn-sm" style="border-color:var(--red);color:var(--red)" onclick="contest1()"><i class="ti ti-flag"></i> Contestar</button>
+            <button class="btn btn-danger btn-sm admin-blk" onclick="confirmDelete('pending','pc1','Excluir o placar pendente <strong>Bruno D. 4/6 3/6 Raphael T.</strong>?')"><i class="ti ti-trash"></i></button>
+          </div>
+        </div>
+        <div class="pend-card" id="pc2">
+          <div class="pend-info">
+            <div class="pend-match">Danilo Fernandes <strong style="color:var(--clay)">2/6 &nbsp; 4/6</strong> <strong>Rone Barbosa</strong></div>
+            <div class="pend-meta">Lançado por Danilo Fernandes · 11/05/2025 · Liga Master 2025</div>
+            <div class="conf-status-row">
+              <span style="font-size:10px;color:var(--text3)">⏱ Expira em: <strong style="color:var(--gold-d)">44h</strong></span>
+            </div>
+          </div>
+          <div class="pend-btns">
+            <button class="btn btn-green btn-sm" onclick="confirm2()"><i class="ti ti-check"></i> Confirmar</button>
+            <button class="btn btn-outline btn-sm" style="border-color:var(--red);color:var(--red)"><i class="ti ti-flag"></i> Contestar</button>
+            <button class="btn btn-danger btn-sm admin-blk" onclick="confirmDelete('pending','pc2','Excluir o placar pendente <strong>Danilo F. 2/6 4/6 Rone B.</strong>?')"><i class="ti ti-trash"></i></button>
+          </div>
+        </div>
+      </div>
+
+      <div class="sec-title" style="margin-top:24px"><i class="ti ti-history"></i> Histórico de Partidas</div>
+      <div class="card" style="overflow:auto">
+        <table style="min-width:580px">
+          <thead style="background:var(--bg)">
+            <tr>
+              <th style="padding:10px 12px;text-align:left;color:var(--text2);font-size:11px;font-family:var(--fB)">Data</th>
+              <th style="padding:10px 12px;text-align:left;color:var(--text2);font-size:11px;font-family:var(--fB)">Partida</th>
+              <th style="padding:10px 12px;text-align:center;color:var(--text2);font-size:11px;font-family:var(--fB)">Placar</th>
+              <th style="padding:10px 12px;text-align:center;color:var(--text2);font-size:11px;font-family:var(--fB)">Status</th>
+              <th class="admin-col" style="padding:10px 12px;text-align:center;color:rgba(224,53,53,.7);font-size:11px;font-family:var(--fB)"><i class="ti ti-trash" style="font-size:13px"></i></th>
+            </tr>
+          </thead>
+          <tbody id="historyBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ▓▓▓ CADASTRO ▓▓▓ -->
+    <div class="page" id="page-cadastro">
+      <div class="sec-title"><i class="ti ti-user-circle"></i> Cadastro de Usuário</div>
+      <div class="role-toggle">
+        <div class="role-btn active" onclick="setRole(this,'atleta')">
+          <i class="ti ti-ball-tennis"></i>
+          <span>Atleta</span>
+          <p>Participar de rankings e torneios</p>
+        </div>
+        <div class="role-btn" onclick="setRole(this,'admin')">
+          <i class="ti ti-shield-star"></i>
+          <span>Administrador de Academia</span>
+          <p>Criar e gerenciar eventos</p>
+        </div>
+      </div>
+
+      <!-- ATLETA FORM -->
+      <div id="fAtleta">
+
+        <!-- ── FOTO DE PERFIL ── -->
+        <div class="card" style="margin-bottom:16px">
+          <div style="font-family:var(--fD);font-size:20px;color:var(--navy);margin-bottom:18px;letter-spacing:.4px;display:flex;align-items:center;gap:8px">
+            <i class="ti ti-camera" style="color:var(--green);font-size:20px"></i> Foto de Perfil
+            <span class="tag tag-green" style="font-family:var(--fB)">Opcional</span>
+          </div>
+          <div class="photo-section">
+            <!-- Preview -->
+            <div class="photo-left">
+              <div class="photo-circle" id="photoCircle">
+                <span class="photo-init" id="photoInit">JM</span>
+                <img id="photoImg" alt="foto perfil">
+              </div>
+              <button class="photo-clear-btn" id="photoClearBtn" onclick="clearPhoto()">
+                <i class="ti ti-x"></i> Remover
+              </button>
+            </div>
+            <!-- Painel direito -->
+            <div class="photo-right">
+              <div class="photo-tabs">
+                <button class="photo-tab active" onclick="setPhotoTab('Camera',this)"><i class="ti ti-camera"></i> Câmera</button>
+                <button class="photo-tab" onclick="setPhotoTab('File',this)"><i class="ti ti-upload"></i> Arquivo</button>
+                <button class="photo-tab" onclick="setPhotoTab('Avatar',this)"><i class="ti ti-palette"></i> Avatar</button>
+              </div>
+
+              <!-- CÂMERA -->
+              <div class="photo-area active" id="paCamera">
+                <div class="cam-wrap" id="camWrap">
+                  <video id="camStream" autoplay playsinline muted></video>
+                  <div class="cam-placeholder" id="camPlaceholder">
+                    <i class="ti ti-camera-off"></i>
+                    <span>Clique em <strong style="color:rgba(255,255,255,.6)">"Abrir Câmera"</strong><br>para ativar</span>
+                  </div>
+                </div>
+                <canvas id="photoCanvas" style="display:none"></canvas>
+                <div class="cam-controls">
+                  <button class="btn btn-navy btn-sm" id="btnStartCam" onclick="startCamera()"><i class="ti ti-camera"></i> Abrir Câmera</button>
+                  <button class="btn btn-green btn-sm" id="btnCapture" onclick="capturePhoto()" disabled><i class="ti ti-aperture"></i> Tirar Foto</button>
+                  <button class="btn btn-outline btn-sm" id="btnStopCam" onclick="stopCamera()" disabled><i class="ti ti-player-stop"></i> Parar</button>
+                </div>
+              </div>
+
+              <!-- ARQUIVO -->
+              <div class="photo-area" id="paFile">
+                <input type="file" id="photoFileInput" accept="image/*"
+                  onchange="onFileSelect(event)" style="display:none">
+                <div class="file-drop" id="fileDrop"
+                  onclick="document.getElementById('photoFileInput').click()"
+                  ondragover="event.preventDefault();this.classList.add('drag-over')"
+                  ondragleave="this.classList.remove('drag-over')"
+                  ondrop="onFileDrop(event)">
+                  <i class="ti ti-photo-up"></i>
+                  <p>Clique para selecionar ou<br><strong>arraste uma imagem aqui</strong></p>
+                  <p style="margin-top:6px;font-size:10px;color:var(--text3)">JPG · PNG · WEBP · Máx 5 MB</p>
+                </div>
+              </div>
+
+              <!-- AVATAR -->
+              <div class="photo-area" id="paAvatar">
+                <p style="font-size:11px;color:var(--text3);margin-bottom:10px">Escolha um avatar — suas iniciais serão aplicadas automaticamente:</p>
+                <div class="avatar-grid" id="avatarGrid"></div>
+              </div>
+
+            </div><!-- /photo-right -->
+          </div><!-- /photo-section -->
+        </div><!-- /card foto -->
+
+        <div class="card">
+          <div style="font-family:var(--fD);font-size:20px;color:var(--navy);margin-bottom:16px;letter-spacing:.4px;display:flex;align-items:center;gap:8px"><i class="ti ti-user" style="color:var(--green);font-size:20px"></i> Dados Pessoais</div>
+          <div class="form-grid">
+            <div class="fg full"><label>Nome Completo *</label><input type="text" id="atletaNome" placeholder="Ex: Josias Modesto Santos" value="Josias Modesto Santos" oninput="updateInitials()"></div>
+            <div class="fg"><label>E-mail *</label><input type="email" placeholder="josias@email.com" value="josias@ligaleao.com"></div>
+            <div class="fg"><label>WhatsApp *</label><input type="tel" placeholder="(62) 99999-0000" value="(62) 99234-5678"></div>
+            <div class="fg"><label>Idade *</label><input type="number" placeholder="25" min="10" max="80" value="34"></div>
+            <div class="fg"><label>Cidade / UF</label><input type="text" placeholder="Minaçu - GO" value="Minaçu - GO"></div>
+            <div class="fg"><label>Tempo que pratica tênis *</label>
+              <select><option>Menos de 1 ano</option><option>1 a 3 anos</option><option selected>3 a 5 anos</option><option>5 a 10 anos</option><option>Mais de 10 anos</option></select>
+            </div>
+            <div class="fg"><label>Nível de Jogo</label>
+              <select><option>Iniciante</option><option>Intermediário</option><option selected>Avançado</option><option>Competitivo</option></select>
+            </div>
+            <div class="fg"><label>Superfície Preferida</label>
+              <select><option>Quadra Rápida (Hard)</option><option selected>Saibro (Clay)</option><option>Grama</option><option>Indiferente</option></select>
+            </div>
+            <div class="fg"><label>Lateralidade</label>
+              <select><option selected>Destro</option><option>Canhoto</option></select>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div style="font-family:var(--fD);font-size:20px;color:var(--navy);margin-bottom:16px;letter-spacing:.4px;display:flex;align-items:center;gap:8px"><i class="ti ti-lock" style="color:var(--green);font-size:20px"></i> Acesso</div>
+          <div class="form-grid">
+            <div class="fg"><label>Senha *</label><input type="password" placeholder="Mínimo 8 caracteres"></div>
+            <div class="fg"><label>Confirmar Senha *</label><input type="password" placeholder="Repita a senha"></div>
+          </div>
+          <div style="margin-top:16px;padding:12px 14px;background:var(--bg);border-radius:var(--r8);font-size:12px;color:var(--text3);border:1px solid var(--border)">
+            💡 No primeiro acesso a senha padrão é <strong>primeironome + ano</strong> (ex: josias2025). Você será obrigado a alterá-la.
+          </div>
+          <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn btn-green" onclick="toast('✅ Atleta cadastrado com sucesso!')"><i class="ti ti-check"></i> Cadastrar Atleta</button>
+            <button class="btn btn-outline"><i class="ti ti-refresh"></i> Limpar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ADMIN FORM -->
+      <div id="fAdmin" style="display:none">
+        <div class="card">
+          <div style="font-family:var(--fD);font-size:20px;color:var(--navy);margin-bottom:16px;letter-spacing:.4px;display:flex;align-items:center;gap:8px"><i class="ti ti-building" style="color:var(--clay);font-size:20px"></i> Dados do Administrador</div>
+          <div class="form-grid">
+            <div class="fg full"><label>Nome Completo *</label><input type="text" placeholder="Ex: Carlos Leão"></div>
+            <div class="fg"><label>E-mail *</label><input type="email" placeholder="admin@academia.com"></div>
+            <div class="fg"><label>WhatsApp *</label><input type="tel" placeholder="(62) 99999-0000"></div>
+            <div class="fg"><label>Idade</label><input type="number" placeholder="38"></div>
+            <div class="fg"><label>Tempo que pratica / ensina *</label>
+              <select><option>1 a 3 anos</option><option>3 a 5 anos</option><option>5 a 10 anos</option><option>Mais de 10 anos</option></select>
+            </div>
+            <div class="fg"><label>Nome do Clube / Academia *</label><input type="text" placeholder="Ex: Academia Leão"></div>
+            <div class="fg"><label>Cidade / UF *</label><input type="text" placeholder="Minaçu - GO"></div>
+            <div class="fg"><label>Instagram / Site</label><input type="text" placeholder="@academia_leao"></div>
+            <div class="fg"><label>CNPJ / CPF (opcional)</label><input type="text" placeholder="00.000.000/0001-00"></div>
+            <div class="fg"><label>Capacidade da Academia</label>
+              <select><option>Até 20 atletas</option><option>20 a 50 atletas</option><option>50 a 100 atletas</option><option>Mais de 100</option></select>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div style="font-family:var(--fD);font-size:20px;color:var(--navy);margin-bottom:16px;letter-spacing:.4px;display:flex;align-items:center;gap:8px"><i class="ti ti-lock" style="color:var(--clay);font-size:20px"></i> Acesso</div>
+          <div class="form-grid">
+            <div class="fg"><label>Senha *</label><input type="password" placeholder="Mínimo 8 caracteres"></div>
+            <div class="fg"><label>Confirmar Senha *</label><input type="password" placeholder="Repita a senha"></div>
+          </div>
+          <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn btn-clay" onclick="toast('🛡️ Administrador cadastrado! Aguardando aprovação.')"><i class="ti ti-shield-check"></i> Cadastrar Administrador</button>
+            <button class="btn btn-outline"><i class="ti ti-refresh"></i> Limpar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ▓▓▓ EVENTOS (Admin) ▓▓▓ -->
+    <div class="page" id="page-eventos">
+      <div class="sec-title"><i class="ti ti-calendar-event"></i> Gerenciar Eventos <span class="tag tag-gold">Admin</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+        <div style="font-size:13px;color:var(--text2)">Academia Leão · 1 evento ativo</div>
+        <button class="btn btn-green" onclick="openModal()"><i class="ti ti-plus"></i> Novo Evento</button>
+      </div>
+      <div class="ev-table-wrap">
+        <table>
+          <thead><tr>
+            <th style="text-align:left">Nome</th><th>Tipo</th><th>Início</th><th>Fim</th><th>Atletas</th><th>Status</th><th>Ações</th>
+          </tr></thead>
+          <tbody>
+            <tr>
+              <td>Liga Master 2025</td>
+              <td><span class="tag tag-green">RANKING</span></td>
+              <td>01/05/2025</td><td>30/11/2025</td>
+              <td style="font-weight:700;text-align:center">14</td>
+              <td style="text-align:center"><span class="badge-ok">● Ativo</span></td>
+              <td style="text-align:center"><div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap">
+                <button class="btn btn-outline btn-sm" onclick="toast('✏️ Edição de evento em breve')"><i class="ti ti-edit"></i></button>
+                <button class="btn btn-danger btn-sm" onclick="confirmDelete('event-row',this,'Excluir o evento <strong>Liga Master 2025</strong> e todos os seus dados?')"><i class="ti ti-trash"></i></button>
+              </div></td>
+            </tr>
+            <tr>
+              <td>Torneio Verão 2024</td>
+              <td><span class="tag tag-clay">TORNEIO</span></td>
+              <td>01/12/2024</td><td>28/02/2025</td>
+              <td style="font-weight:700;text-align:center">16</td>
+              <td style="text-align:center"><span style="font-size:10px;font-weight:700;padding:3px 10px;border-radius:var(--rfull);background:var(--bg2);color:var(--text3)">Encerrado</span></td>
+              <td style="text-align:center"><div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap">
+                <button class="btn btn-outline btn-sm"><i class="ti ti-eye"></i></button>
+                <button class="btn btn-danger btn-sm" onclick="confirmDelete('event-row',this,'Excluir o evento <strong>Torneio Verão 2024</strong> e todos os seus dados?')"><i class="ti ti-trash"></i></button>
+              </div></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /appShell -->
+
+<!-- ════════════════════════ MODAL CONFIRMAR EXCLUSÃO ════════════════════════ -->
+<div class="del-modal-bg" id="delModal" style="display:none" onclick="closeDelModal(event)">
+  <div class="del-modal-box" onclick="event.stopPropagation()">
+    <div class="del-icon"><i class="ti ti-trash"></i></div>
+    <div class="del-title">Confirmar Exclusão</div>
+    <div class="del-desc" id="delDesc">Tem certeza que deseja excluir este item? Esta ação não pode ser desfeita.</div>
+    <div class="del-actions">
+      <button class="btn btn-outline" onclick="closeDelModal()"><i class="ti ti-x"></i> Cancelar</button>
+      <button class="btn btn-danger" onclick="execDelete()"><i class="ti ti-trash"></i> Excluir</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════ MODAL NOVO EVENTO ════════════════════════ -->
+<div class="modal-bg" id="evModal" style="display:none" onclick="closeModal(event)">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div class="modal-title"><i class="ti ti-calendar-plus" style="color:var(--green)"></i> Cadastrar Novo Evento</div>
+
+    <div class="fg" style="margin-bottom:16px"><label>Nome do Evento *</label><input type="text" placeholder="Ex: Liga Leão Master 2025 – 2ª Edição"></div>
+
+    <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Modalidade *</div>
+    <div class="type-pick">
+      <div class="type-opt sel" onclick="selType(this)">
+        <div class="to-icon">🏆</div>
+        <div class="to-name">Ranking</div>
+        <div class="to-sub">Pontuação acumulada por temporada</div>
+      </div>
+      <div class="type-opt" onclick="selType(this)">
+        <div class="to-icon">🎾</div>
+        <div class="to-name">Torneio</div>
+        <div class="to-sub">Eliminatório / Chaves / Grupos</div>
+      </div>
+    </div>
+
+    <div class="form-grid g3" style="margin-bottom:16px">
+      <div class="fg"><label>Data de Início *</label><input type="date" value="2025-05-01"></div>
+      <div class="fg"><label>Data de Fim *</label><input type="date" value="2025-11-30"></div>
+      <div class="fg"><label>Taxa de Inscrição (R$)</label><input type="number" placeholder="0" value="130"></div>
+    </div>
+
+    <hr class="divider">
+    <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:10px">✅ Regras do Evento (selecione as aplicáveis)</div>
+    <div class="rules-list">
+      <label class="rule-row"><input type="checkbox" checked><span class="rule-text">Cada atleta deve jogar pelo menos 1× contra cada adversário (round-robin)</span></label>
+      <label class="rule-row"><input type="checkbox" checked><span class="rule-text">W.O. conta como derrota (0 pts) e soma pontos ao adversário automaticamente</span></label>
+      <label class="rule-row"><input type="checkbox"><span class="rule-text">Partidas disputadas em melhor de 3 sets (formato profissional)</span></label>
+      <label class="rule-row"><input type="checkbox" checked><span class="rule-text">Placar deve ser confirmado por ambos os jogadores em até 48h</span></label>
+      <label class="rule-row"><input type="checkbox" checked><span class="rule-text">Prazo máximo de 15 dias corridos para realizar partida agendada</span></label>
+      <label class="rule-row"><input type="checkbox" checked><span class="rule-text">Vitória = 3 pts · Derrota = 1 pt · W.O. / ausência = 0 pts</span></label>
+      <label class="rule-row"><input type="checkbox" checked><span class="rule-text">1° critério de desempate: saldo de sets; 2° critério: saldo de games</span></label>
+      <label class="rule-row"><input type="checkbox"><span class="rule-text">Atleta com 2 ausências consecutivas sem justificativa é suspenso da rodada</span></label>
+      <label class="rule-row"><input type="checkbox" checked><span class="rule-text">Taxa de inscrição obrigatória e confirmada antes da participação</span></label>
+      <label class="rule-row"><input type="checkbox"><span class="rule-text">Pontuação acumulada por etapas (cada etapa tem peso definido pelo ADM)</span></label>
+    </div>
+
+    <hr class="divider">
+    <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:10px">📊 Critérios de Pontuação e Desempate (defina a ordem)</div>
+    <div class="criteria-list">
+      <div class="crit-row"><input type="checkbox" checked><span class="crit-name">Vitórias</span><span class="crit-tie">Desempate: confronto direto</span><input class="crit-seq" type="number" value="1" min="1" max="20"></div>
+      <div class="crit-row"><input type="checkbox" checked><span class="crit-name">Saldo de Sets (S.V – S.P)</span><span class="crit-tie">Desempate: maior % sets vencidos</span><input class="crit-seq" type="number" value="2" min="1" max="20"></div>
+      <div class="crit-row"><input type="checkbox" checked><span class="crit-name">Saldo de Games (G.V – G.P)</span><span class="crit-tie">Desempate: maior nº games vencidos</span><input class="crit-seq" type="number" value="3" min="1" max="20"></div>
+      <div class="crit-row"><input type="checkbox"><span class="crit-name">% de Aproveitamento</span><span class="crit-tie">Desempate: nº de jogos disputados</span><input class="crit-seq" type="number" value="4" min="1" max="20"></div>
+      <div class="crit-row"><input type="checkbox"><span class="crit-name">Confronto Direto entre empatados</span><span class="crit-tie">Desempate: sets vencidos no H2H</span><input class="crit-seq" type="number" value="5" min="1" max="20"></div>
+      <div class="crit-row"><input type="checkbox"><span class="crit-name">Total de Sets Vencidos</span><span class="crit-tie">Desempate: games vencidos no total</span><input class="crit-seq" type="number" value="6" min="1" max="20"></div>
+      <div class="crit-row"><input type="checkbox"><span class="crit-name">Menor nº de W.O.s dados</span><span class="crit-tie">Desempate: pontos diretos acumulados</span><input class="crit-seq" type="number" value="7" min="1" max="20"></div>
+      <div class="crit-row"><input type="checkbox"><span class="crit-name">Pontos por Etapa (ponderado)</span><span class="crit-tie">Desempate: melhor resultado na última etapa</span><input class="crit-seq" type="number" value="8" min="1" max="20"></div>
+      <div class="crit-row"><input type="checkbox"><span class="crit-name">Sequência de vitórias atual</span><span class="crit-tie">Desempate: games vencidos seguidos</span><input class="crit-seq" type="number" value="9" min="1" max="20"></div>
+      <div class="crit-row"><input type="checkbox"><span class="crit-name">Tie-breaks Vencidos</span><span class="crit-tie">Desempate: pontos em tie-break</span><input class="crit-seq" type="number" value="10" min="1" max="20"></div>
+      <div class="crit-row"><input type="checkbox"><span class="crit-name">Assiduidade (% jogos realizados)</span><span class="crit-tie">Desempate: menor nº de adiamentos</span><input class="crit-seq" type="number" value="11" min="1" max="20"></div>
+      <div class="crit-row"><input type="checkbox"><span class="crit-name">Qualidade dos adversários vencidos</span><span class="crit-tie">Desempate: ranking médio dos adversários</span><input class="crit-seq" type="number" value="12" min="1" max="20"></div>
+      <div class="crit-row"><input type="checkbox"><span class="crit-name">Games vencidos no 3° set decisivo</span><span class="crit-tie">Desempate: games totais no 3° set</span><input class="crit-seq" type="number" value="13" min="1" max="20"></div>
+      <div class="crit-row"><input type="checkbox"><span class="crit-name">Pontuação histórica (ranking anterior)</span><span class="crit-tie">Desempate: melhor posição histórica</span><input class="crit-seq" type="number" value="14" min="1" max="20"></div>
+      <div class="crit-row"><input type="checkbox"><span class="crit-name">Categoria / Faixa etária</span><span class="crit-tie">Desempate: idade do atleta</span><input class="crit-seq" type="number" value="15" min="1" max="20"></div>
+      <div class="crit-row"><input type="checkbox"><span class="crit-name">Maior vitória (adversário mais forte)</span><span class="crit-tie">Desempate: ranking do adversário</span><input class="crit-seq" type="number" value="16" min="1" max="20"></div>
+      <div class="crit-row"><input type="checkbox"><span class="crit-name">Sets perdidos totais (menor)</span><span class="crit-tie">Desempate: games perdidos totais</span><input class="crit-seq" type="number" value="17" min="1" max="20"></div>
+      <div class="crit-row"><input type="checkbox"><span class="crit-name">Menor tempo médio de partida</span><span class="crit-tie">Desempate: duração total acumulada</span><input class="crit-seq" type="number" value="18" min="1" max="20"></div>
+      <div class="crit-row"><input type="checkbox"><span class="crit-name">Byes / pontos de walkover recebidos</span><span class="crit-tie">Desempate: menor nº de byes usados</span><input class="crit-seq" type="number" value="19" min="1" max="20"></div>
+      <div class="crit-row"><input type="checkbox"><span class="crit-name">Sorteio (último critério de desempate)</span><span class="crit-tie">Desempate final: sorteio público pelo ADM</span><input class="crit-seq" type="number" value="20" min="1" max="20"></div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal()"><i class="ti ti-x"></i> Cancelar</button>
+      <button class="btn btn-green" onclick="saveEvent()"><i class="ti ti-check"></i> Salvar Evento</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toastEl"></div>
+
+<!-- ════════════════════════ JAVASCRIPT ════════════════════════ -->
+<script>
+/* ─── GLOBALS ─── */
+let isAdmin        = false;
+let currentPlayer  = null; // dados do atleta logado
+let pendingDelete  = null; // {type, id, refEl}
+
+/* ─── RESULTS DATA ─── */
+const results = [
+  {id:'r1',date:'12/05/25',p1:'Josias M.',p2:'Lorenzo R.',score:'6/4 6/3',winner:'p1',status:'confirmed'},
+  {id:'r2',date:'11/05/25',p1:'Andrey M.',p2:'Luiz B.',  score:'7/5 6/2',winner:'p1',status:'confirmed'},
+  {id:'r3',date:'09/05/25',p1:'Gabriel R.',p2:'Bernardo A.',score:'3/6 2/6',winner:'p2',status:'confirmed'},
+  {id:'r4',date:'07/05/25',p1:'Raphael T.',p2:'Bernardo A.',score:'6/3 7/6',winner:'p1',status:'confirmed'},
+];
+
+/* ─── DATA ─── */
+const players=[
+  {p:1,n:"JOSIAS MODESTO",tx:130,j:12,v:10,d:2,sv:22,sp:8,ss:14,gv:156,gp:94,pts:245,bp:0,tier:'podium'},
+  {p:2,n:"RAPHAEL TELES",tx:130,j:11,v:9,d:2,sv:20,sp:7,ss:13,gv:145,gp:89,pts:218,bp:0,tier:'podium'},
+  {p:3,n:"BERNARDO ANTUNES",tx:130,j:10,v:8,d:2,sv:18,sp:9,ss:9,gv:132,gp:98,pts:197,bp:0,tier:'podium'},
+  {p:4,n:"ANDREY MACHADO",tx:130,j:11,v:7,d:4,sv:17,sp:11,ss:6,gv:128,gp:106,pts:186,bp:1,tier:'podium'},
+  {p:5,n:"LORENZO REZENDE",tx:130,j:9,v:6,d:3,sv:14,sp:9,ss:5,gv:112,gp:98,pts:162,bp:0,tier:'class'},
+  {p:6,n:"LUIZ BRUNET",tx:130,j:10,v:6,d:4,sv:14,sp:10,ss:4,gv:118,gp:109,pts:158,bp:0,tier:'class'},
+  {p:7,n:"BRUNO DANIEL",tx:130,j:9,v:5,d:4,sv:12,sp:10,ss:2,gv:108,gp:104,pts:142,bp:0,tier:'class'},
+  {p:8,n:"GABRIEL RIBEIRO",tx:130,j:8,v:4,d:4,sv:11,sp:11,ss:0,gv:102,gp:105,pts:128,bp:0,tier:'class'},
+  {p:9,n:"DANILO FERNANDES",tx:130,j:7,v:3,d:4,sv:9,sp:11,ss:-2,gv:94,gp:108,pts:104,bp:0,tier:'danger'},
+  {p:10,n:"RONE BARBOSA",tx:130,j:7,v:3,d:4,sv:8,sp:10,ss:-2,gv:90,gp:110,pts:102,bp:0,tier:'danger'},
+  {p:11,n:"GUSTAVO ZACARON",tx:130,j:6,v:2,d:4,sv:7,sp:11,ss:-4,gv:84,gp:112,pts:88,bp:1,tier:'danger'},
+  {p:12,n:"EDUARDO BALDOINO",tx:130,j:6,v:2,d:4,sv:6,sp:11,ss:-5,gv:80,gp:116,pts:82,bp:0,tier:'danger'},
+  {p:13,n:"CELIO MARQUES",tx:130,j:5,v:1,d:4,sv:5,sp:11,ss:-6,gv:72,gp:118,pts:68,bp:0,tier:'danger'},
+  {p:14,n:"BERLISSON FRAINE",tx:130,j:4,v:0,d:4,sv:3,sp:10,ss:-7,gv:58,gp:120,pts:42,bp:1,tier:'danger'},
+];
+
+/* ─── LOGIN ─── */
+function doLogin(){
+  const e=document.getElementById('lEmail').value;
+  isAdmin=e.includes('admin');
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('appShell').style.display='block';
+  if(isAdmin){
+    document.body.classList.add('admin-mode');
+    document.body.classList.remove('athlete-mode');
+    currentPlayer=null;
+    document.getElementById('rolePill').textContent='ADMIN';
+    document.getElementById('rolePill').className='role-pill role-admin';
+    document.getElementById('userAv').textContent='CL';
+    document.getElementById('userAv').style.background='var(--gold)';
+    document.getElementById('userName').textContent='Carlos Leão';
+    document.getElementById('navEventos').style.display='';
+    document.getElementById('mobEventos').style.display='';
+  } else {
+    document.body.classList.remove('admin-mode');
+    document.body.classList.add('athlete-mode');
+    // Demo: josias é o primeiro jogador (posição 1)
+    currentPlayer=players[0];
+  }
+  renderRanking();
+  calcProgress();
+  renderPendingGames();
+  renderHistory();
+  renderAthleteCard();
+  renderLiveRanking();
+  toast('👋 Bem-vindo ao LigaPRO!');
+}
+
+function goRegister(){
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('appShell').style.display='block';
+  document.body.classList.add('athlete-mode');
+  currentPlayer=players[0]; // demo: atleta padrão
+  nav('cadastro',null);
+  renderRanking();
+  renderPendingGames();
+  renderHistory();
+  renderAthleteCard();
+  renderLiveRanking();
+}
+
+/* ─── NAV ─── */
+function nav(id,el){
+  if(typeof camStream!=='undefined'&&camStream)stopCamera();
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  document.querySelectorAll('.nav-link,.mob-tab').forEach(b=>b.classList.remove('active'));
+  if(el)el.classList.add('active');
+}
+
+/* ─── DASHBOARD DO ATLETA ─── */
+function renderAthleteCard(){
+  const sec=document.getElementById('myPosSection');
+  if(!sec)return;
+  if(!currentPlayer){sec.innerHTML='';return;}
+  const p=currentPlayer;
+  const medals=['🥇','🥈','🥉','⭐'];
+  const medal=p.p<=4?medals[p.p-1]:'📍';
+  const posColor=p.p===1?'var(--gold)':p.p<=3?'rgb(205,127,50)':p.p<=8?'var(--green)':'var(--clay)';
+  const above=players.find(pl=>pl.p===p.p-1);
+  const below=players.find(pl=>pl.p===p.p+1);
+
+  let gapHtml='';
+  if(p.p===1){
+    const second=players.find(pl=>pl.p===2);
+    gapHtml=`<span class="gap-chip gap-leader">🏆 Líder! +${second?p.pts-second.pts:0} pts à frente</span>`;
+  } else {
+    gapHtml=`<span class="gap-chip gap-above">▲ ${above.pts-p.pts} pts atrás do ${above.p}°</span>`;
+  }
+  if(below&&p.p>1){
+    gapHtml+=`<span class="gap-chip gap-below">▼ +${p.pts-below.pts} pts sobre o ${below.p}°</span>`;
+  }
+
+  const nextG=pendingGames.length?pendingGames[0]:null;
+  const nextHtml=nextG
+    ?`<div class="my-next-match">${nextG.p1} <em style="color:rgba(255,255,255,.3)">vs</em> ${nextG.p2}</div>
+      <div class="my-next-date">${nextG.date} · ${nextG.round}</div>`
+    :`<div class="my-next-match" style="font-size:16px;color:rgba(255,255,255,.4)">Sem jogos agendados</div>`;
+
+  const pct=p.j>0?Math.round(p.v/p.j*100):0;
+
+  sec.innerHTML=`
+  <div class="my-pos-card">
+    <div class="my-pos-left">
+      <div class="my-pos-name">${p.n}</div>
+      <div class="my-pos-sub">Liga Master 2025 · Minaçu - GO · Temporada em andamento</div>
+      <div class="my-pos-stats">
+        <div class="my-stat">
+          <div class="my-stat-val" style="color:${posColor}">${medal}&nbsp;${p.p}°</div>
+          <div class="my-stat-lbl">Posição</div>
+        </div>
+        <div class="my-stat">
+          <div class="my-stat-val" style="color:var(--green)">${p.pts}</div>
+          <div class="my-stat-lbl">Pontos</div>
+        </div>
+        <div class="my-stat">
+          <div class="my-stat-val">${p.v}</div>
+          <div class="my-stat-lbl" style="color:var(--green)">Vitórias</div>
+        </div>
+        <div class="my-stat">
+          <div class="my-stat-val" style="color:var(--clay)">${p.d}</div>
+          <div class="my-stat-lbl">Derrotas</div>
+        </div>
+        <div class="my-stat">
+          <div class="my-stat-val" style="color:${p.ss>=0?'var(--green)':'var(--clay)'}">${p.ss>0?'+':''}${p.ss}</div>
+          <div class="my-stat-lbl">Saldo Sets</div>
+        </div>
+        <div class="my-stat">
+          <div class="my-stat-val">${pct}%</div>
+          <div class="my-stat-lbl">Aproveit.</div>
+        </div>
+      </div>
+      <div class="my-pos-gap">${gapHtml}</div>
+    </div>
+    <div class="my-pos-right">
+      <div class="my-next-lbl"><i class="ti ti-calendar-event"></i> Próximo Jogo</div>
+      ${nextHtml}
+      <div class="my-pos-taxa" style="margin-top:12px">
+        <span class="badge-ok">✓ Taxa paga · R$${p.tx}</span>
+      </div>
+      <div style="margin-top:8px;font-size:11px;color:rgba(255,255,255,.3)">${p.j} jogos disputados</div>
+    </div>
+  </div>`;
+}
+
+function renderLiveRanking(){
+  const sec=document.getElementById('liveRankSection');
+  if(!sec||!currentPlayer)return;
+  const medals=['🥇','🥈','🥉','⭐'];
+  const zones={podium:'<span class="zone-tag zt-p">Pódio</span>',class:'<span class="zone-tag zt-c">Top 8</span>',danger:'<span class="zone-tag zt-d">Zona ▼</span>'};
+  const rkColors=['rk-1','rk-2','rk-3','rk-top'];
+
+  const rows=players.map(r=>{
+    const isMe=currentPlayer&&r.p===currentPlayer.p;
+    const medal=r.p<=4?' '+medals[r.p-1]:'';
+    const rkC=r.p<=4?rkColors[r.p-1]:r.tier==='danger'?'rk-bot':'rk-mid';
+    const meBadge=isMe?'<span class="me-badge">VOCÊ</span>':'';
+    const ssColor=r.ss>0?'color:var(--green-d);font-weight:700':r.ss<0?'color:var(--clay);font-weight:700':'';
+    return `<tr${isMe?' class="is-me"':''}>
+      <td><span class="lr-pos ${rkC}">${r.p}${medal}</span></td>
+      <td>${r.n}${meBadge}</td>
+      <td class="lr-pts">${r.pts}</td>
+      <td style="color:var(--green-d);font-weight:700">${r.v}</td>
+      <td style="color:var(--clay);font-weight:700">${r.d}</td>
+      <td style="${ssColor}">${r.ss>0?'+':''}${r.ss}</td>
+      <td>${zones[r.tier]}</td>
+    </tr>`;
+  }).join('');
+
+  sec.innerHTML=`
+  <div class="live-rank-card">
+    <div class="live-rank-head">
+      <div class="live-rank-title"><i class="ti ti-table"></i> Classificação ao Vivo — Liga Master 2025</div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <span style="font-size:11px;color:var(--text3)">Atualizado agora</span>
+        <span class="badge-ok" style="animation:pulse-dot 2s infinite">● Ao vivo</span>
+      </div>
+    </div>
+    <div class="live-rank-scroll">
+      <table class="live-rank-table">
+        <thead><tr>
+          <th>Pos</th><th style="text-align:left;padding-left:14px">Nome</th>
+          <th>Pts</th><th>V</th><th>D</th><th>S.S.</th><th>Zona</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  </div>`;
+}
+
+/* ─── PROGRESS ─── */
+function calcProgress(){
+  const s=new Date('2025-05-01'),e=new Date('2025-11-30'),n=new Date('2025-05-13');
+  const pct=Math.round(Math.min(100,Math.max(0,(n-s)/(e-s)*100)));
+  const dias=Math.round((e-n)/864e5);
+  const total=Math.round((e-s)/864e5);
+  document.getElementById('tv').innerHTML=pct+'<sup>%</sup>';
+  document.getElementById('ts').textContent=dias+' dias restantes de '+total+' totais';
+  setTimeout(()=>{document.getElementById('tb').style.width=pct+'%'},200);
+  const jp=Math.round(38/91*100);
+  document.getElementById('jv').innerHTML=jp+'<sup>%</sup>';
+  document.getElementById('js').textContent='38 de 91 jogos concluídos';
+  setTimeout(()=>{document.getElementById('jb').style.width=jp+'%'},400);
+}
+
+/* ─── RANKING ─── */
+function renderRanking(){
+  const medals=['🥇','🥈','🥉','⭐'];
+  const rkClass=['rk-1','rk-2','rk-3','rk-top'];
+  const body=document.getElementById('rankBody');
+  body.innerHTML=players.map(r=>{
+    const tier=r.tier;
+    const trClass=tier==='podium'?'t-podium':tier==='class'?'t-class':'t-danger';
+    const rkC=r.p<=4?rkClass[r.p-1]:tier==='danger'?'rk-bot':'rk-mid';
+    const medal=r.p<=4?' '+medals[r.p-1]:'';
+    const zone=tier==='podium'?'<span class="zone-tag zt-p">Pódio</span>':tier==='class'?'<span class="zone-tag zt-c">Top 8</span>':'<span class="zone-tag zt-d">Zona ▼</span>';
+    const ssColor=r.ss>0?'class="ss-pos"':r.ss<0?'class="ss-neg"':'';
+    const bp=r.bp>0?`<span style="font-size:10px;background:var(--clay-l);color:var(--clay);padding:2px 6px;border-radius:6px;font-weight:700">${r.bp}</span>`:'-';
+    const delBtn=`<td class="admin-col"><button class="btn btn-danger btn-sm" onclick="confirmDelete('player',${r.p},'Remover <strong>${r.n}</strong> do ranking? Todos os resultados associados serão excluídos.')"><i class="ti ti-trash"></i></button></td>`;
+    return `<tr class="${trClass}">
+      <td><span class="rk-num ${rkC}">${r.p}${medal}</span></td>
+      <td><span class="taxa-tag">R$${r.tx}</span></td>
+      <td class="name-td">${r.n}</td>
+      <td><strong>${r.j}</strong></td>
+      <td style="color:var(--green-d);font-weight:700">${r.v}</td>
+      <td style="color:var(--clay);font-weight:700">${r.d}</td>
+      <td>${r.sv}</td><td>${r.sp}</td>
+      <td ${ssColor}>${r.ss>0?'+':''}${r.ss}</td>
+      <td>${r.gv}</td><td>${r.gp}</td>
+      <td class="pts-big">${r.pts}</td>
+      <td>${bp}</td>
+      <td>${zone}</td>
+      ${delBtn}
+    </tr>`;
+  }).join('');
+}
+
+/* ─── ROLE TOGGLE ─── */
+function setRole(el,role){
+  document.querySelectorAll('.role-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('fAtleta').style.display=role==='atleta'?'block':'none';
+  document.getElementById('fAdmin').style.display=role==='admin'?'block':'none';
+}
+
+/* ─── RESULTADO ─── */
+function sendResult(){
+  const p1=document.getElementById('p1sel').value.split(' (')[0];
+  const s1a=document.getElementById('s1a').value,s1b=document.getElementById('s1b').value;
+  const s2a=document.getElementById('s2a').value,s2b=document.getElementById('s2b').value;
+  toast(`📤 Resultado ${p1}: ${s1a}/${s2a} enviado! Aguardando confirmação.`);
+}
+function confirm1(){
+  document.getElementById('pc1').classList.add('confirmed');
+  document.getElementById('pc1').querySelector('.pend-match').innerHTML+=' <span class="badge-ok">✓ Confirmado</span>';
+  document.getElementById('pc1').querySelectorAll('button').forEach(b=>b.disabled=true);
+  toast('✅ Resultado confirmado! Ranking atualizado.');
+}
+function contest1(){
+  document.getElementById('pc1').style.borderLeftColor='var(--red)';
+  toast('🚩 Contestação registrada. Admin será notificado.');
+}
+function confirm2(){
+  document.getElementById('pc2').classList.add('confirmed');
+  toast('✅ Placar confirmado com sucesso!');
+}
+
+/* ─── FOTO DE PERFIL ─── */
+let camStream       = null;
+let currentPhotoType = null; // 'image' | 'avatar' | null
+let selectedAvatar  = -1;
+
+const avatarDefs = [
+  {bg:'#00C46A',fg:'#0B1927',ic:'🎾'},{bg:'#0B1927',fg:'#00C46A',ic:'🏆'},
+  {bg:'#C85A1A',fg:'#FFFFFF',ic:'⭐'},{bg:'#F5C518',fg:'#0B1927',ic:'👑'},
+  {bg:'#1E3550',fg:'#00C46A',ic:'🥇'},{bg:'#4A90D9',fg:'#FFFFFF',ic:'💪'},
+  {bg:'#7B2D8B',fg:'#FFFFFF',ic:'🔥'},{bg:'#E03535',fg:'#FFFFFF',ic:'⚡'},
+  {bg:'#2ECC71',fg:'#FFFFFF',ic:'🌟'},{bg:'#F39C12',fg:'#FFFFFF',ic:'🎯'},
+  {bg:'#1ABC9C',fg:'#FFFFFF',ic:'🏅'},{bg:'#34495E',fg:'#00C46A',ic:'💎'},
+];
+
+function renderAvatars(){
+  const grid=document.getElementById('avatarGrid');
+  if(!grid)return;
+  grid.innerHTML=avatarDefs.map((a,i)=>
+    `<div class="avatar-opt${selectedAvatar===i?' sel':''}"
+      style="background:${a.bg}"
+      onclick="selectAvatar(${i})"
+      title="Avatar ${i+1}">${a.ic}</div>`
+  ).join('');
+}
+
+function setPhotoTab(tab,el){
+  document.querySelectorAll('.photo-tab').forEach(b=>b.classList.remove('active'));
+  if(el)el.classList.add('active');
+  document.querySelectorAll('.photo-area').forEach(a=>a.classList.remove('active'));
+  const area=document.getElementById('pa'+tab);
+  if(area)area.classList.add('active');
+  if(tab==='Avatar')renderAvatars();
+  if(tab!=='Camera'&&camStream)stopCamera();
+}
+
+function startCamera(){
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
+    toast('⚠️ Câmera não suportada neste navegador/dispositivo.');return;
+  }
+  navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:640},height:{ideal:480}},audio:false})
+    .then(stream=>{
+      camStream=stream;
+      const v=document.getElementById('camStream');
+      v.srcObject=stream; v.style.display='block';
+      document.getElementById('camPlaceholder').style.display='none';
+      document.getElementById('btnStartCam').disabled=true;
+      document.getElementById('btnCapture').disabled=false;
+      document.getElementById('btnStopCam').disabled=false;
+    })
+    .catch(err=>{
+      console.warn(err);
+      toast('⚠️ Permissão negada ou câmera indisponível.');
+    });
+}
+
+function capturePhoto(){
+  const v=document.getElementById('camStream');
+  const c=document.getElementById('photoCanvas');
+  const ctx=c.getContext('2d');
+  c.width=v.videoWidth||320; c.height=v.videoHeight||240;
+  ctx.drawImage(v,0,0,c.width,c.height);
+  applyPhotoPreview(c.toDataURL('image/jpeg',.88));
+  stopCamera();
+  toast('📸 Foto capturada com sucesso!');
+}
+
+function stopCamera(){
+  if(camStream){camStream.getTracks().forEach(t=>t.stop());camStream=null;}
+  const v=document.getElementById('camStream');
+  if(v){v.style.display='none';v.srcObject=null;}
+  const ph=document.getElementById('camPlaceholder');
+  if(ph)ph.style.display='flex';
+  const bs=document.getElementById('btnStartCam');
+  const bc=document.getElementById('btnCapture');
+  const bst=document.getElementById('btnStopCam');
+  if(bs)bs.disabled=false;
+  if(bc)bc.disabled=true;
+  if(bst)bst.disabled=true;
+}
+
+function onFileSelect(e){
+  const file=e.target.files[0];
+  if(!file)return;
+  if(file.size>5*1024*1024){toast('⚠️ Imagem muito grande. Máximo 5 MB.');return;}
+  const reader=new FileReader();
+  reader.onload=ev=>{applyPhotoPreview(ev.target.result);toast('🖼️ Foto carregada com sucesso!');};
+  reader.readAsDataURL(file);
+}
+
+function onFileDrop(e){
+  e.preventDefault();
+  document.getElementById('fileDrop').classList.remove('drag-over');
+  const file=e.dataTransfer.files[0];
+  if(!file||!file.type.startsWith('image/')){toast('⚠️ Arquivo inválido. Envie uma imagem.');return;}
+  if(file.size>5*1024*1024){toast('⚠️ Imagem muito grande. Máximo 5 MB.');return;}
+  const reader=new FileReader();
+  reader.onload=ev=>{applyPhotoPreview(ev.target.result);toast('🖼️ Foto carregada com sucesso!');};
+  reader.readAsDataURL(file);
+}
+
+function selectAvatar(idx){
+  selectedAvatar=idx;
+  renderAvatars();
+  const av=avatarDefs[idx];
+  const circle=document.getElementById('photoCircle');
+  const img=document.getElementById('photoImg');
+  const init=document.getElementById('photoInit');
+  circle.style.background=av.bg;
+  img.style.display='none'; img.src='';
+  init.style.display='flex'; init.style.color=av.fg;
+  circle.classList.add('sel');
+  document.getElementById('photoClearBtn').style.display='inline-flex';
+  currentPhotoType='avatar';
+  toast('🎨 Avatar selecionado!');
+}
+
+function applyPhotoPreview(src){
+  const circle=document.getElementById('photoCircle');
+  const img=document.getElementById('photoImg');
+  const init=document.getElementById('photoInit');
+  img.src=src; img.style.display='block';
+  init.style.display='none';
+  circle.style.background='#0B1927';
+  circle.classList.add('sel');
+  document.getElementById('photoClearBtn').style.display='inline-flex';
+  currentPhotoType='image';
+}
+
+function clearPhoto(){
+  const circle=document.getElementById('photoCircle');
+  const img=document.getElementById('photoImg');
+  const init=document.getElementById('photoInit');
+  img.src=''; img.style.display='none';
+  circle.style.background='';
+  circle.classList.remove('sel');
+  init.style.display='flex'; init.style.color='';
+  document.getElementById('photoClearBtn').style.display='none';
+  const fi=document.getElementById('photoFileInput');
+  if(fi)fi.value='';
+  selectedAvatar=-1; currentPhotoType=null;
+  renderAvatars(); updateInitials();
+}
+
+function updateInitials(){
+  if(currentPhotoType)return; // não sobrescreve foto/avatar
+  const nEl=document.getElementById('atletaNome');
+  const init=document.getElementById('photoInit');
+  if(!nEl||!init)return;
+  const parts=nEl.value.trim().split(/\s+/).filter(Boolean);
+  if(parts.length>=2){
+    init.textContent=(parts[0][0]+parts[parts.length-1][0]).toUpperCase();
+  } else if(parts.length===1){
+    init.textContent=parts[0].substring(0,2).toUpperCase();
+  } else {
+    init.textContent='?';
+  }
+}
+
+/* ─── HISTÓRICO DINÂMICO ─── */
+function renderHistory(){
+  const body=document.getElementById('historyBody');
+  if(!body)return;
+  if(!results.length){
+    body.innerHTML=`<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text3)">Nenhum resultado registrado.</td></tr>`;
+    return;
+  }
+  body.innerHTML=results.map((r,i)=>{
+    const scoreColor=r.winner==='p1'?'var(--green-d)':'var(--clay)';
+    const delTd=`<td class="admin-col" style="padding:10px 12px;text-align:center">
+      <button class="btn btn-danger btn-sm" onclick="confirmDelete('result','${r.id}','Excluir o resultado <strong>${r.p1} × ${r.p2} (${r.score})</strong>?')"><i class="ti ti-trash"></i></button>
+    </td>`;
+    const bdr=i<results.length-1?'border-bottom:1px solid var(--border)':'';
+    return `<tr style="${bdr}">
+      <td style="padding:10px 12px;font-size:12px;color:var(--text3)">${r.date}</td>
+      <td style="padding:10px 12px;font-size:13px;font-weight:500">${r.p1} × ${r.p2}</td>
+      <td style="padding:10px 12px;text-align:center;font-size:13px;font-weight:700;color:${scoreColor}">${r.score}</td>
+      <td style="padding:10px 12px;text-align:center"><span class="badge-ok">✓ Confirmado</span></td>
+      ${delTd}
+    </tr>`;
+  }).join('');
+}
+
+/* ─── EXCLUSÃO ADMIN ─── */
+function confirmDelete(type,id,desc){
+  // id pode ser um valor escalar ou um elemento DOM (para event-row)
+  const refEl=(id instanceof HTMLElement)?id:null;
+  const scalarId=refEl?null:id;
+  pendingDelete={type,id:scalarId,refEl};
+  document.getElementById('delDesc').innerHTML=desc+'<br><span style="font-size:11px;color:var(--red)">Esta ação não pode ser desfeita.</span>';
+  document.getElementById('delModal').style.display='flex';
+}
+function closeDelModal(e){
+  if(!e||e.target===document.getElementById('delModal')){
+    document.getElementById('delModal').style.display='none';
+    pendingDelete=null;
+  }
+}
+function execDelete(){
+  if(!pendingDelete)return;
+  const {type,id}=pendingDelete;
+  if(type==='player'){
+    const idx=players.findIndex(p=>p.p===id);
+    if(idx>-1){
+      players.splice(idx,1);
+      players.forEach((pl,i)=>pl.p=i+1);
+      renderRanking();
+      renderAthleteCard();
+      renderLiveRanking();
+    }
+    toast('🗑️ Atleta removido do ranking.');
+  } else if(type==='result'){
+    const idx=results.findIndex(r=>r.id===id);
+    if(idx>-1){results.splice(idx,1);renderHistory();}
+    toast('🗑️ Resultado excluído do histórico.');
+  } else if(type==='pending'){
+    const el=document.getElementById(id);
+    if(el)el.remove();
+    toast('🗑️ Placar pendente removido.');
+  } else if(type==='game'){
+    const idx=pendingGames.findIndex(g=>g.id===id);
+    if(idx>-1){pendingGames.splice(idx,1);renderPendingGames();}
+    toast('🗑️ Jogo removido da lista.');
+  } else if(type==='event-row'){
+    // id é o elemento botão passado por referência via pendingDelete.refEl
+    if(pendingDelete.refEl){const row=pendingDelete.refEl.closest('tr');if(row)row.remove();}
+    toast('🗑️ Evento excluído.');
+  }
+  closeDelModal();
+}
+
+/* ─── CONFIRMAÇÃO DE JOGO (Etapa 1) ─── */
+const pendingGames=[
+  {id:'g1',p1:'Josias M.',p2:'Lorenzo R.',date:'15/05/25',round:'Rodada 6',myOk:false,oppOk:false},
+  {id:'g2',p1:'Raphael T.',p2:'Bruno D.',date:'16/05/25',round:'Rodada 6',myOk:false,oppOk:true},
+  {id:'g3',p1:'Bernardo A.',p2:'Danilo F.',date:'18/05/25',round:'Rodada 6',myOk:true,oppOk:true},
+];
+
+function renderPendingGames(){
+  const el=document.getElementById('gameConfirmList');
+  if(!el)return;
+  const countEl=document.getElementById('gameConfirmCount');
+  const pending=pendingGames.filter(g=>!g.myOk||!g.oppOk);
+  if(countEl)countEl.textContent=pending.length+' aguardando';
+
+  el.innerHTML=pendingGames.map(g=>{
+    const bothOk=g.myOk&&g.oppOk;
+    const cls=bothOk?'both-ok':g.myOk?'my-ok':'';
+    const myBtn=g.myOk
+      ?'<span class="badge-ok">✓ Você confirmou</span>'
+      :`<button class="btn btn-green btn-sm" onclick="confirmGame('${g.id}')"><i class="ti ti-check"></i> Confirmar Jogo</button>`;
+    const oppBadge=g.oppOk
+      ?'<span class="badge-ok">✓ Adversário confirmou</span>'
+      :'<span class="badge-pend">⏳ Aguardando adversário</span>';
+    const readyBadge=bothOk
+      ?'<span class="badge-ok" style="background:var(--green);color:var(--navy)">🎾 Pronto para lançar placar</span>':'';
+    const adminDelBtn=`<button class="btn btn-danger btn-sm admin-blk" onclick="confirmDelete('game','${g.id}','Excluir o jogo agendado <strong>${g.p1} vs ${g.p2}</strong> (${g.date})?')"><i class="ti ti-trash"></i></button>`;
+    return `<div class="game-confirm-card ${cls}" id="gc-${g.id}">
+      <div class="pend-info">
+        <div class="pend-match">${g.p1} <em style="color:var(--text3)">vs</em> ${g.p2}</div>
+        <div class="pend-meta">${g.round} · Agendado: ${g.date}</div>
+        <div class="conf-status-row">${oppBadge}${readyBadge}</div>
+      </div>
+      <div class="pend-btns">${myBtn}${adminDelBtn}</div>
+    </div>`;
+  }).join('');
+}
+
+function confirmGame(id){
+  const g=pendingGames.find(x=>x.id===id);
+  if(!g)return;
+  g.myOk=true;
+  renderPendingGames();
+  if(g.oppOk){
+    toast('🎾 Jogo confirmado por ambos! Agora você pode lançar o placar.');
+  } else {
+    toast('✅ Você confirmou o jogo! Aguardando confirmação do adversário.');
+  }
+}
+
+/* ─── MODAL EVENTO ─── */
+function openModal(){document.getElementById('evModal').style.display='flex'}
+function closeModal(e){if(!e||e.target===document.getElementById('evModal'))document.getElementById('evModal').style.display='none'}
+function selType(el){document.querySelectorAll('.type-opt').forEach(o=>o.classList.remove('sel'));el.classList.add('sel')}
+function saveEvent(){closeModal();toast('🏆 Evento cadastrado com sucesso!')}
+
+/* ─── TOAST ─── */
+function toast(msg){
+  const t=document.getElementById('toastEl');
+  t.innerHTML='<i class="ti ti-bell"></i> '+msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3200);
+}
+</script>
+</body>
+</html>

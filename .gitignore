@@ -1,0 +1,46 @@
+# ─── Windows ───────────────────────────────────
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# ─── macOS ─────────────────────────────────────
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# ─── Node / npm (caso futuros scripts sejam adicionados) ───
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+.npm
+
+# ─── Editores ──────────────────────────────────
+.vscode/
+.idea/
+*.suo
+*.user
+*.swp
+*.swo
+*~
+
+# ─── Build / Dist ──────────────────────────────
+dist/
+build/
+.cache/
+
+# ─── Variáveis de ambiente ─────────────────────
+.env
+.env.local
+.env.*.local
+
+# ─── Logs ──────────────────────────────────────
+*.log
+logs/
