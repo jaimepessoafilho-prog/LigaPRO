@@ -304,3 +304,71 @@ body {
 }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 .toast i { font-size: 16px; color: var(--green); }
+
+/* ═══════════════════════════════════════════
+   RANKING TABLE
+═══════════════════════════════════════════ */
+.table-wrap {
+  background: white;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  overflow: auto;
+  box-shadow: 0 2px 8px rgba(0,0,0,.08);
+}
+table { width: 100%; border-collapse: collapse; min-width: 560px; }
+thead { background: var(--navy); position: sticky; top: 0; z-index: 2; }
+thead th {
+  color: rgba(255,255,255,.4);
+  font-size: 10px; font-weight: 700;
+  padding: 12px 10px; text-align: center;
+  text-transform: uppercase; letter-spacing: .6px; white-space: nowrap;
+}
+thead th.name-th { text-align: left; padding-left: 16px; }
+tbody tr { border-bottom: 1px solid var(--border); transition: background .12s; }
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: var(--bg) !important; }
+td { padding: 11px 10px; text-align: center; font-size: 13px; color: var(--text2); }
+td.name-td { text-align: left; padding-left: 16px; font-weight: 600; color: var(--text); white-space: nowrap; }
+
+.rk-num { font-family: var(--font-display); font-size: 20px; width: 34px; display: inline-flex; align-items: center; justify-content: center; }
+.rk-1 { color: var(--gold); }
+.rk-2 { color: rgb(185,195,208); }
+.rk-3 { color: rgb(205,127,50); }
+.rk-top { color: var(--green-d); }
+.rk-mid { color: var(--text); }
+.rk-bot { color: var(--clay); }
+
+tr.t-podium { background: rgba(245,197,24,.05); }
+tr.t-class  { background: rgba(0,196,106,.03); }
+tr.t-danger { background: rgba(200,90,26,.04); }
+
+.zone-tag { font-size: 9px; font-weight: 700; padding: 2px 8px; border-radius: 9999px; letter-spacing: .3px; white-space: nowrap; }
+.zt-p { background: rgba(245,197,24,.2); color: var(--gold-d); }
+.zt-c { background: var(--green-l); color: var(--green-d); }
+.zt-d { background: var(--clay-l); color: var(--clay); }
+
+.pts-big { font-family: var(--font-display); font-size: 18px; color: var(--navy); }
+.me-badge {
+  font-size: 9px; font-weight: 700; padding: 2px 7px;
+  background: var(--green); color: var(--navy);
+  border-radius: 9999px; margin-left: 6px;
+  vertical-align: middle; letter-spacing: .3px;
+}
+
+/* ═══════════════════════════════════════════
+   ATHLETE LIST
+═══════════════════════════════════════════ */
+.athlete-row {
+  display: flex; align-items: center; gap: 14px;
+  padding: 12px 0; border-bottom: 1px solid var(--border);
+}
+.athlete-row:last-child { border-bottom: none; }
+.athlete-av {
+  width: 42px; height: 42px; border-radius: 50%;
+  background: var(--navy-l); color: white;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-size: 18px; flex-shrink: 0;
+  letter-spacing: .5px;
+}
+.athlete-name { font-size: 14px; font-weight: 600; color: var(--text); }
+.athlete-meta { font-size: 11px; color: var(--text3); margin-top: 2px; }
