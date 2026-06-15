@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { auth } from '@/lib/auth'
+import type { CSSProperties } from 'react'
 import { prisma } from '@/lib/prisma'
 import { isAdminRole } from '@/lib/nav'
 import { Card, SectionTitle, Tag } from '@/components/ui/Card'
@@ -63,27 +64,33 @@ export default async function EventosPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           {events.map((e) => {
             const st = STATUS[e.status] ?? STATUS.DRAFT
+            const cardLink: CSSProperties = { textDecoration: 'none', color: 'inherit', display: 'block' }
             return (
-              <Card key={e.id}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', flexWrap: 'wrap' }}>
-                  <div>
-                    <div style={{ fontFamily: 'var(--font-display)', fontSize: '22px', color: 'var(--navy)', letterSpacing: '.5px' }}>
-                      {e.name}
+              <Link key={e.id} href={`/eventos/${e.id}`} style={cardLink}>
+                <Card>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', flexWrap: 'wrap' }}>
+                    <div>
+                      <div style={{ fontFamily: 'var(--font-display)', fontSize: '22px', color: 'var(--navy)', letterSpacing: '.5px' }}>
+                        {e.name}
+                      </div>
+                      <div style={{ fontSize: '12px', color: 'var(--text3)', marginTop: '4px' }}>
+                        <i className="ti ti-map-pin" style={{ verticalAlign: '-2px' }} /> {e.location} ·{' '}
+                        {new Date(e.startDate).toLocaleDateString('pt-BR')}
+                      </div>
                     </div>
-                    <div style={{ fontSize: '12px', color: 'var(--text3)', marginTop: '4px' }}>
-                      <i className="ti ti-map-pin" style={{ verticalAlign: '-2px' }} /> {e.location} ·{' '}
-                      {new Date(e.startDate).toLocaleDateString('pt-BR')}
-                    </div>
+                    <span className={st.cls}>{st.label}</span>
                   </div>
-                  <span className={st.cls}>{st.label}</span>
-                </div>
-                <div style={{ display: 'flex', gap: '6px', marginTop: '12px', flexWrap: 'wrap' }}>
-                  <Tag variant="navy">{FORMAT_LABELS[e.format as CBTFormat]}</Tag>
-                  <Tag variant="clay">{MATCH_TYPE_LABELS[e.matchType as CBTMatchType]}</Tag>
-                  <Tag variant="gold">{CATEGORY_LABELS[e.category as CBTCategory]}</Tag>
-                  <Tag variant="green">{e._count.registrations} inscritos</Tag>
-                </div>
-              </Card>
+                  <div style={{ display: 'flex', gap: '6px', marginTop: '12px', flexWrap: 'wrap' }}>
+                    <Tag variant="navy">{FORMAT_LABELS[e.format as CBTFormat]}</Tag>
+                    <Tag variant="clay">{MATCH_TYPE_LABELS[e.matchType as CBTMatchType]}</Tag>
+                    <Tag variant="gold">{CATEGORY_LABELS[e.category as CBTCategory]}</Tag>
+                    <Tag variant="green">{e._count.registrations} inscritos</Tag>
+                  </div>
+                  <div style={{ marginTop: '10px', fontSize: '12px', color: 'var(--green-d)', fontWeight: 600 }}>
+                    Ver detalhes e inscrever-se <i className="ti ti-arrow-right" style={{ verticalAlign: '-2px' }} />
+                  </div>
+                </Card>
+              </Link>
             )
           })}
         </div>

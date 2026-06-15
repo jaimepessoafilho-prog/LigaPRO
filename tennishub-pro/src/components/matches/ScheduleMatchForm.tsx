@@ -12,7 +12,13 @@ const labelStyle: React.CSSProperties = {
   textTransform: 'uppercase', letterSpacing: '.5px', display: 'block', marginBottom: '6px',
 }
 
-export function ScheduleMatchForm({ events, opponents }: { events: Option[]; opponents: Option[] }) {
+export function ScheduleMatchForm({
+  events,
+  opponentsByEvent,
+}: {
+  events: Option[]
+  opponentsByEvent: Record<string, Option[]>
+}) {
   const router = useRouter()
   const toast = useToast()
   const [isPending, startTransition] = useTransition()
@@ -21,6 +27,7 @@ export function ScheduleMatchForm({ events, opponents }: { events: Option[]; opp
   const [opponentId, setOpponentId] = useState('')
   const [scheduledAt, setScheduledAt] = useState('')
 
+  const opponents = opponentsByEvent[eventId] ?? []
   const canSubmit = eventId && opponentId
 
   function submit() {
@@ -47,17 +54,8 @@ export function ScheduleMatchForm({ events, opponents }: { events: Option[]; opp
       <Card>
         <SectionTitle icon="ti-calendar-plus">Marcar Jogo</SectionTitle>
         <p style={{ color: 'var(--text2)', fontSize: '14px' }}>
-          Nenhum evento ativo. Aguarde a abertura de um evento para marcar jogos.
-        </p>
-      </Card>
-    )
-  }
-  if (opponents.length === 0) {
-    return (
-      <Card>
-        <SectionTitle icon="ti-calendar-plus">Marcar Jogo</SectionTitle>
-        <p style={{ color: 'var(--text2)', fontSize: '14px' }}>
-          Ainda não há outros atletas cadastrados para enfrentar.
+          Você ainda não está inscrito em nenhum evento ativo. Inscreva-se em{' '}
+          <strong>Eventos</strong> para marcar jogos.
         </p>
       </Card>
     )
@@ -69,16 +67,29 @@ export function ScheduleMatchForm({ events, opponents }: { events: Option[]; opp
       <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
         <div>
           <label style={labelStyle}>Evento</label>
-          <select className="input-field" value={eventId} onChange={(e) => setEventId(e.target.value)}>
+          <select
+            className="input-field"
+            value={eventId}
+            onChange={(e) => {
+              setEventId(e.target.value)
+              setOpponentId('')
+            }}
+          >
             {events.map((ev) => <option key={ev.id} value={ev.id}>{ev.name}</option>)}
           </select>
         </div>
         <div>
           <label style={labelStyle}>Adversário</label>
-          <select className="input-field" value={opponentId} onChange={(e) => setOpponentId(e.target.value)}>
-            <option value="">Escolha o adversário</option>
-            {opponents.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
-          </select>
+          {opponents.length === 0 ? (
+            <p style={{ fontSize: '13px', color: 'var(--text3)' }}>
+              Nenhum outro atleta inscrito neste evento ainda.
+            </p>
+          ) : (
+            <select className="input-field" value={opponentId} onChange={(e) => setOpponentId(e.target.value)}>
+              <option value="">Escolha o adversário</option>
+              {opponents.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
+            </select>
+          )}
         </div>
         <div>
           <label style={labelStyle}>Data prevista (opcional)</label>
