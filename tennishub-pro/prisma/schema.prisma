@@ -196,19 +196,21 @@ model Match {
   id          String      @id @default(cuid())
   eventId     String
   drawId      String?
-  player1Id   String
-  player2Id   String?
-  player3Id   String?
-  player4Id   String?
-  scheduledAt DateTime?
-  courtNumber Int?
-  sets        Json        @default("[]")
-  winnerId    String?
-  status      MatchStatus @default(PENDING)
-  walkover    Boolean     @default(false)
-  notes       String?
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  // player1 = quem MARCOU o jogo (proponente); player2 = adversário que confirma
+  player1Id          String
+  player2Id          String?
+  player3Id          String?
+  player4Id          String?
+  scheduledAt        DateTime?
+  courtNumber        Int?
+  sets               Json        @default("[]")
+  scoreSubmittedById String?     // quem lançou o placar
+  winnerId           String?
+  status             MatchStatus @default(PENDING_OPPONENT)
+  walkover           Boolean     @default(false)
+  notes              String?
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
 
   event   Event @relation(fields: [eventId], references: [id])
   draw    Draw? @relation(fields: [drawId], references: [id])
@@ -221,10 +223,12 @@ model Match {
 }
 
 enum MatchStatus {
-  PENDING
-  IN_PROGRESS
-  FINISHED
-  CANCELLED
+  PENDING_OPPONENT // aguardando adversário confirmar o jogo
+  SCHEDULED        // jogo confirmado pelos dois, a ser disputado
+  PENDING_SCORE    // placar lançado, aguardando confirmação do adversário
+  FINISHED         // placar confirmado — pontos creditados
+  CONTESTED        // placar contestado pelo adversário
+  CANCELLED        // jogo recusado/cancelado
   WALKOVER
 }
 

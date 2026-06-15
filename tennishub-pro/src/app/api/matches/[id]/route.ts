@@ -1,0 +1,118 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { auth } from '@/lib/auth'
+import { prisma } from '@/lib/prisma'
+import { computeWinner, getWinPoints, isValidSet } from '@/lib/match-points'
+import { z } from 'zod'
+
+const setSchema = z.object({ p1: z.coerce.number().int().min(0), p2: z.coerce.number().int().min(0) })
+
+const actionSchema = z.object({
+  action: z.enum(['confirm-match', 'decline', 'submit-score', 'confirm-score', 'contest-score']),
+  sets: z.array(setSchema).optional(),
+})
+
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const session = await auth()
+  if (!session) return NextResponse.json({ message: 'Não autorizado' }, { status: 401 })
+
+  const { id } = await params
+  const me = session.user.id
+
+  let body: z.infer<typeof actionSchema>
+  try {
+    body = actionSchema.parse(await req.json())
+  } catch {
+    return NextResponse.json({ message: 'Ação inválida' }, { status: 400 })
+  }
+
+  const match = await prisma.match.findUnique({ where: { id } })
+  if (!match) return NextResponse.json({ message: 'Partida não encontrada' }, { status: 404 })
+
+  const isProposer = match.player1Id === me
+  const isOpponent = match.player2Id === me
+  const isParticipant = isProposer || isOpponent
+  if (!isParticipant) {
+    return NextResponse.json({ message: 'Você não participa desta partida' }, { status: 403 })
+  }
+
+  switch (body.action) {
+    // Adversário confirma que o jogo vai ocorrer
+    case 'confirm-match': {
+      if (!isOpponent) return NextResponse.json({ message: 'Apenas o adversário confirma o jogo' }, { status: 403 })
+      if (match.status !== 'PENDING_OPPONENT') return NextResponse.json({ message: 'Jogo não está aguardando confirmação' }, { status: 409 })
+      const updated = await prisma.match.update({ where: { id }, data: { status: 'SCHEDULED' } })
+      return NextResponse.json(updated)
+    }
+
+    // Adversário recusa o jogo
+    case 'decline': {
+      if (!isOpponent) return NextResponse.json({ message: 'Apenas o adversário pode recusar' }, { status: 403 })
+      if (match.status !== 'PENDING_OPPONENT') return NextResponse.json({ message: 'Jogo não pode mais ser recusado' }, { status: 409 })
+      const updated = await prisma.match.update({ where: { id }, data: { status: 'CANCELLED' } })
+      return NextResponse.json(updated)
+    }
+
+    // Um participante lança o placar
+    case 'submit-score': {
+      if (match.status !== 'SCHEDULED' && match.status !== 'CONTESTED') {
+        return NextResponse.json({ message: 'Jogo não está liberado para lançar placar' }, { status: 409 })
+      }
+      const sets = (body.sets ?? []).filter(isValidSet)
+      if (sets.length === 0) return NextResponse.json({ message: 'Informe ao menos um set válido' }, { status: 400 })
+      const { winnerId } = computeWinner(sets, match.player1Id, match.player2Id ?? '')
+      if (!winnerId) return NextResponse.json({ message: 'O placar não define um vencedor' }, { status: 400 })
+
+      const updated = await prisma.match.update({
+        where: { id },
+        data: { sets, winnerId, scoreSubmittedById: me, status: 'PENDING_SCORE' },
+      })
+      return NextResponse.json(updated)
+    }
+
+    // Adversário (quem NÃO lançou) confirma o placar → credita pontos
+    case 'confirm-score': {
+      if (match.status !== 'PENDING_SCORE') return NextResponse.json({ message: 'Não há placar para confirmar' }, { status: 409 })
+      if (match.scoreSubmittedById === me) {
+        return NextResponse.json({ message: 'Aguarde o adversário confirmar o placar' }, { status: 403 })
+      }
+      if (!match.winnerId) return NextResponse.json({ message: 'Partida sem vencedor definido' }, { status: 400 })
+
+      const event = await prisma.event.findUnique({ where: { id: match.eventId } })
+      const winPoints = getWinPoints(event?.scoringSystem)
+      const year = event ? new Date(event.startDate).getFullYear() : new Date().getFullYear()
+      const winnerId = match.winnerId
+
+      const updated = await prisma.$transaction(async (tx) => {
+        const m = await tx.match.update({ where: { id }, data: { status: 'FINISHED' } })
+        const existing = await tx.rankingPoint.findUnique({
+          where: { userId_eventId: { userId: winnerId, eventId: match.eventId } },
+        })
+        if (existing) {
+          await tx.rankingPoint.update({ where: { id: existing.id }, data: { points: existing.points + winPoints } })
+        } else {
+          await tx.rankingPoint.create({
+            data: { userId: winnerId, eventId: match.eventId, points: winPoints, position: 0, year },
+          })
+        }
+        return m
+      })
+      return NextResponse.json(updated)
+    }
+
+    // Adversário contesta o placar → volta para lançamento
+    case 'contest-score': {
+      if (match.status !== 'PENDING_SCORE') return NextResponse.json({ message: 'Não há placar para contestar' }, { status: 409 })
+      if (match.scoreSubmittedById === me) {
+        return NextResponse.json({ message: 'Você lançou este placar; aguarde o adversário' }, { status: 403 })
+      }
+      const updated = await prisma.match.update({
+        where: { id },
+        data: { status: 'CONTESTED', sets: [], winnerId: null, scoreSubmittedById: null },
+      })
+      return NextResponse.json(updated)
+    }
+
+    default:
+      return NextResponse.json({ message: 'Ação desconhecida' }, { status: 400 })
+  }
+}
