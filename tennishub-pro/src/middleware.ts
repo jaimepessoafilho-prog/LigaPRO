@@ -1,5 +1,9 @@
-import { auth } from '@/lib/auth'
+import NextAuth from 'next-auth'
 import { NextResponse } from 'next/server'
+import { authConfig } from '@/lib/auth.config'
+
+// Instância edge-safe (sem Prisma) só para checagem de sessão no middleware
+const { auth } = NextAuth(authConfig)
 
 const PUBLIC_PATHS = ['/login', '/register', '/api/auth', '/api/users']
 
