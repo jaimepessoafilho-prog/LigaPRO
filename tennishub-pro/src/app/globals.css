@@ -1,0 +1,148 @@
+@import "tailwindcss";
+
+/* ── Design tokens (LigaPRO palette) ── */
+:root {
+  --green:     #00C46A;
+  --green-d:   #00A358;
+  --green-l:   #D4F5E5;
+  --green-gl:  rgba(0,196,106,.15);
+
+  --clay:      #C85A1A;
+  --clay-l:    #FAE8DC;
+
+  --navy:      #0B1927;
+  --navy-m:    #152435;
+  --navy-l:    #1E3550;
+
+  --gold:      #F5C518;
+  --gold-d:    #B8920E;
+
+  --red:       #E03535;
+  --red-l:     #FDEAEA;
+
+  --white:     #FFFFFF;
+  --bg:        #F0F4F8;
+  --bg2:       #E4EAF1;
+  --border:    #D1DCE8;
+  --text:      #0B1927;
+  --text2:     #3D5369;
+  --text3:     #7A96AA;
+}
+
+@theme inline {
+  --color-green:    var(--green);
+  --color-green-d:  var(--green-d);
+  --color-green-l:  var(--green-l);
+  --color-clay:     var(--clay);
+  --color-clay-l:   var(--clay-l);
+  --color-navy:     var(--navy);
+  --color-navy-m:   var(--navy-m);
+  --color-navy-l:   var(--navy-l);
+  --color-gold:     var(--gold);
+  --color-gold-d:   var(--gold-d);
+  --color-red:      var(--red);
+  --color-app-bg:   var(--bg);
+  --color-border:   var(--border);
+  --color-text:     var(--text);
+  --color-text2:    var(--text2);
+  --color-text3:    var(--text3);
+
+  --font-display: 'Bebas Neue', sans-serif;
+  --font-body:    'DM Sans', sans-serif;
+}
+
+/* ── Base ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Animations ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: .45; }
+}
+
+/* ── Reusable component classes ── */
+.animate-fade-up { animation: fadeUp .3s ease both; }
+
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 10px 20px; border-radius: 8px;
+  font-size: 13px; font-weight: 600;
+  border: 1.5px solid transparent;
+  cursor: pointer; transition: all .15s ease;
+  white-space: nowrap;
+}
+.btn:active { transform: scale(.96); }
+
+.btn-green {
+  background: var(--green); color: var(--navy);
+  border-color: var(--green);
+  box-shadow: 0 2px 10px rgba(0,196,106,.28);
+}
+.btn-green:hover {
+  background: var(--green-d); border-color: var(--green-d);
+  box-shadow: 0 4px 18px rgba(0,196,106,.4);
+  transform: translateY(-1px);
+}
+
+.btn-navy {
+  background: var(--navy); color: var(--white);
+  border-color: var(--navy);
+}
+.btn-navy:hover { background: var(--navy-l); }
+
+.btn-outline {
+  background: transparent; color: var(--text2);
+  border-color: var(--border);
+}
+.btn-outline:hover {
+  border-color: var(--green-d); color: var(--green-d);
+  background: var(--green-l);
+}
+
+.input-field {
+  width: 100%;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 14px; color: var(--text);
+  background: white;
+  outline: none; transition: all .15s ease;
+  font-family: var(--font-body);
+}
+.input-field:focus {
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px rgba(0,196,106,.13);
+}
+
+/* Login screen specific */
+.input-dark {
+  width: 100%;
+  background: rgba(255,255,255,.07);
+  border: 1.5px solid rgba(255,255,255,.12);
+  border-radius: 12px;
+  padding: 13px 16px;
+  color: white; font-size: 14px;
+  outline: none; transition: all .22s ease;
+  font-family: var(--font-body);
+}
+.input-dark:focus {
+  border-color: var(--green);
+  background: rgba(0,196,106,.08);
+  box-shadow: 0 0 0 3px rgba(0,196,106,.18);
+}
+.input-dark::placeholder { color: rgba(255,255,255,.22); }

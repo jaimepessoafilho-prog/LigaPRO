@@ -1,0 +1,249 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================================
+// USUÁRIOS
+// ============================================================
+
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  whatsapp      String
+  age           Int
+  gender        Gender
+  passwordHash  String
+  role          Role      @default(ATHLETE)
+  avatarUrl     String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  registrations EventRegistration[]
+  matchesAsP1   Match[]   @relation("Player1")
+  matchesAsP2   Match[]   @relation("Player2")
+  matchesAsP3   Match[]   @relation("Player3")
+  matchesAsP4   Match[]   @relation("Player4")
+  rankingPoints RankingPoint[]
+  sessions      Session[]
+
+  @@map("users")
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum Role {
+  ATHLETE
+  ADMIN
+  SUPER_ADMIN
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+// ============================================================
+// EVENTOS
+// ============================================================
+
+model Event {
+  id                   String      @id @default(cuid())
+  name                 String
+  description          String?
+  startDate            DateTime
+  endDate              DateTime
+  location             String
+  logoUrl              String?
+  format               EventFormat
+  matchType            MatchType
+  drawType             DrawType
+  category             Category
+  ageGroup             AgeGroup?
+  maxParticipants      Int?
+  registrationDeadline DateTime?
+  status               EventStatus @default(DRAFT)
+  scoringSystem        Json
+  createdById          String
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+
+  registrations EventRegistration[]
+  draws         Draw[]
+  matches       Match[]
+  rankingPoints RankingPoint[]
+
+  @@map("events")
+}
+
+enum EventFormat {
+  SINGLES
+  DOUBLES
+}
+
+enum MatchType {
+  ELIMINATION
+  ROUND_ROBIN
+  HYBRID
+}
+
+enum DrawType {
+  SEEDED
+  RANDOM
+  RANKING
+}
+
+enum Category {
+  OPEN
+  A
+  B
+  C
+  D
+}
+
+enum AgeGroup {
+  UNDER_12
+  UNDER_14
+  UNDER_16
+  UNDER_18
+  ADULT
+  SENIOR_35
+  SENIOR_45
+  SENIOR_55
+  SENIOR_60
+}
+
+enum EventStatus {
+  DRAFT
+  OPEN
+  CLOSED
+  IN_PROGRESS
+  FINISHED
+  CANCELLED
+}
+
+// ============================================================
+// INSCRIÇÕES
+// ============================================================
+
+model EventRegistration {
+  id           String             @id @default(cuid())
+  eventId      String
+  userId       String
+  partnerId    String?
+  seed         Int?
+  status       RegistrationStatus @default(PENDING)
+  registeredAt DateTime           @default(now())
+
+  event Event @relation(fields: [eventId], references: [id])
+  user  User  @relation(fields: [userId], references: [id])
+
+  @@unique([eventId, userId])
+  @@map("event_registrations")
+}
+
+enum RegistrationStatus {
+  PENDING
+  CONFIRMED
+  WAITLIST
+  CANCELLED
+  DISQUALIFIED
+}
+
+// ============================================================
+// CHAVES E PARTIDAS
+// ============================================================
+
+model Draw {
+  id        String    @id @default(cuid())
+  eventId   String
+  round     Int
+  phase     DrawPhase
+  createdAt DateTime  @default(now())
+
+  event   Event   @relation(fields: [eventId], references: [id])
+  matches Match[]
+
+  @@map("draws")
+}
+
+enum DrawPhase {
+  GROUP_STAGE
+  ROUND_OF_64
+  ROUND_OF_32
+  ROUND_OF_16
+  QUARTER_FINALS
+  SEMI_FINALS
+  FINAL
+  THIRD_PLACE
+}
+
+model Match {
+  id          String      @id @default(cuid())
+  eventId     String
+  drawId      String?
+  player1Id   String
+  player2Id   String?
+  player3Id   String?
+  player4Id   String?
+  scheduledAt DateTime?
+  courtNumber Int?
+  sets        Json        @default("[]")
+  winnerId    String?
+  status      MatchStatus @default(PENDING)
+  walkover    Boolean     @default(false)
+  notes       String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  event   Event @relation(fields: [eventId], references: [id])
+  draw    Draw? @relation(fields: [drawId], references: [id])
+  player1 User  @relation("Player1", fields: [player1Id], references: [id])
+  player2 User? @relation("Player2", fields: [player2Id], references: [id])
+  player3 User? @relation("Player3", fields: [player3Id], references: [id])
+  player4 User? @relation("Player4", fields: [player4Id], references: [id])
+
+  @@map("matches")
+}
+
+enum MatchStatus {
+  PENDING
+  IN_PROGRESS
+  FINISHED
+  CANCELLED
+  WALKOVER
+}
+
+// ============================================================
+// RANKING E PONTUAÇÃO
+// ============================================================
+
+model RankingPoint {
+  id        String   @id @default(cuid())
+  userId    String
+  eventId   String
+  points    Int
+  position  Int
+  year      Int
+  awardedAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id])
+  event Event @relation(fields: [eventId], references: [id])
+
+  @@unique([userId, eventId])
+  @@map("ranking_points")
+}
