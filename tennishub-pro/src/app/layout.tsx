@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Bebas_Neue, DM_Sans } from 'next/font/google'
 import './globals.css'
+import { Providers } from '@/components/Providers'
 
 const bebasNeue = Bebas_Neue({
   weight: '400',
@@ -21,7 +22,15 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt-BR" className={`${bebasNeue.variable} ${dmSans.variable}`}>
-      <body style={{ fontFamily: 'var(--font-body)' }}>{children}</body>
+      <head>
+        <link
+          rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.30.0/dist/tabler-icons.min.css"
+        />
+      </head>
+      <body style={{ fontFamily: 'var(--font-body)' }}>
+        <Providers>{children}</Providers>
+      </body>
     </html>
   )
 }
