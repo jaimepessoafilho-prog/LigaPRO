@@ -1,12 +1,93 @@
-import { Placeholder } from '@/components/ui/Placeholder'
+import Link from 'next/link'
+import { auth } from '@/lib/auth'
+import { prisma } from '@/lib/prisma'
+import { isAdminRole } from '@/lib/nav'
+import { Card, SectionTitle, Tag } from '@/components/ui/Card'
+import {
+  FORMAT_LABELS,
+  MATCH_TYPE_LABELS,
+  CATEGORY_LABELS,
+  type CBTFormat,
+  type CBTMatchType,
+  type CBTCategory,
+} from '@/lib/cbt-rules'
 
-export default function EventosPage() {
+export const dynamic = 'force-dynamic'
+
+const STATUS: Record<string, { label: string; cls: string }> = {
+  DRAFT: { label: 'Rascunho', cls: 'badge-pend' },
+  OPEN: { label: 'Inscrições abertas', cls: 'badge-ok' },
+  CLOSED: { label: 'Encerrado', cls: 'badge-pend' },
+  IN_PROGRESS: { label: 'Em andamento', cls: 'badge-ok' },
+  FINISHED: { label: 'Finalizado', cls: 'badge-cont' },
+  CANCELLED: { label: 'Cancelado', cls: 'badge-cont' },
+}
+
+export default async function EventosPage() {
+  const session = await auth()
+  const admin = isAdminRole(session?.user?.role)
+
+  const events = await prisma.event.findMany({
+    orderBy: { startDate: 'desc' },
+    include: { _count: { select: { registrations: true } } },
+  })
+
   return (
-    <Placeholder
-      icon="ti-calendar-event"
-      title="Eventos"
-      phase="Fase 4"
-      description="A criação e gestão de eventos (wizard de formato, regras CBT, inscrições e chaves) será migrada na Fase 4 — Módulo Admin."
-    />
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+        <SectionTitle icon="ti-calendar-event">
+          Eventos <Tag variant="green">{events.length}</Tag>
+        </SectionTitle>
+        {admin && (
+          <Link href="/eventos/novo" className="btn btn-green" style={{ textDecoration: 'none' }}>
+            <i className="ti ti-plus" /> Novo Evento
+          </Link>
+        )}
+      </div>
+
+      {events.length === 0 ? (
+        <Card>
+          <div style={{ textAlign: 'center', padding: '32px 16px' }}>
+            <div style={{ fontSize: '40px', marginBottom: '8px' }}>📅</div>
+            <p style={{ color: 'var(--text2)', fontSize: '14px', marginBottom: admin ? '16px' : 0 }}>
+              Nenhum evento criado ainda.
+            </p>
+            {admin && (
+              <Link href="/eventos/novo" className="btn btn-green" style={{ textDecoration: 'none' }}>
+                <i className="ti ti-plus" /> Criar primeiro evento
+              </Link>
+            )}
+          </div>
+        </Card>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          {events.map((e) => {
+            const st = STATUS[e.status] ?? STATUS.DRAFT
+            return (
+              <Card key={e.id}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', flexWrap: 'wrap' }}>
+                  <div>
+                    <div style={{ fontFamily: 'var(--font-display)', fontSize: '22px', color: 'var(--navy)', letterSpacing: '.5px' }}>
+                      {e.name}
+                    </div>
+                    <div style={{ fontSize: '12px', color: 'var(--text3)', marginTop: '4px' }}>
+                      <i className="ti ti-map-pin" style={{ verticalAlign: '-2px' }} /> {e.location} ·{' '}
+                      {new Date(e.startDate).toLocaleDateString('pt-BR')}
+                    </div>
+                  </div>
+                  <span className={st.cls}>{st.label}</span>
+                </div>
+                <div style={{ display: 'flex', gap: '6px', marginTop: '12px', flexWrap: 'wrap' }}>
+                  <Tag variant="navy">{FORMAT_LABELS[e.format as CBTFormat]}</Tag>
+                  <Tag variant="clay">{MATCH_TYPE_LABELS[e.matchType as CBTMatchType]}</Tag>
+                  <Tag variant="gold">{CATEGORY_LABELS[e.category as CBTCategory]}</Tag>
+                  <Tag variant="green">{e._count.registrations} inscritos</Tag>
+                </div>
+              </Card>
+            )
+          })}
+        </div>
+      )}
+    </div>
   )
 }
