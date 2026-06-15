@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { isAdminRole } from '@/lib/nav'
 
 // Inscreve o atleta logado no evento
 export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -36,19 +37,29 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
   return NextResponse.json(reg, { status: 201 })
 }
 
-// Cancela a própria inscrição
-export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+// Cancela uma inscrição. Sem ?userId → a própria; com ?userId → admin remove o atleta.
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
   if (!session) return NextResponse.json({ message: 'Não autorizado' }, { status: 401 })
 
   const { id: eventId } = await params
-  const userId = session.user.id
+  const { searchParams } = new URL(req.url)
+  const targetUserId = searchParams.get('userId')
+
+  // Remover inscrição de OUTRO atleta exige admin
+  let userId = session.user.id
+  if (targetUserId && targetUserId !== session.user.id) {
+    if (!isAdminRole(session.user.role)) {
+      return NextResponse.json({ message: 'Apenas o admin pode remover outros atletas' }, { status: 403 })
+    }
+    userId = targetUserId
+  }
 
   const existing = await prisma.eventRegistration.findUnique({
     where: { eventId_userId: { eventId, userId } },
   })
   if (!existing) {
-    return NextResponse.json({ message: 'Você não está inscrito' }, { status: 404 })
+    return NextResponse.json({ message: 'Inscrição não encontrada' }, { status: 404 })
   }
 
   await prisma.eventRegistration.delete({ where: { id: existing.id } })

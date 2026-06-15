@@ -4,6 +4,8 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { Card, SectionTitle, Tag } from '@/components/ui/Card'
 import { RegisterButton } from '@/components/events/RegisterButton'
+import { RemoveRegistrationButton } from '@/components/events/RemoveRegistrationButton'
+import { isAdminRole } from '@/lib/nav'
 import {
   FORMAT_LABELS, MATCH_TYPE_LABELS, CATEGORY_LABELS, DRAW_TYPE_LABELS,
   type CBTFormat, type CBTMatchType, type CBTCategory,
@@ -41,6 +43,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
   if (!event) notFound()
 
   const myReg = event.registrations.find((r) => r.userId === me)
+  const admin = isAdminRole(session?.user?.role)
   const st = STATUS[event.status] ?? STATUS.DRAFT
 
   return (
@@ -103,6 +106,9 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
                     {r.userId === me && <span className="me-badge">VOCÊ</span>}
                   </div>
                 </div>
+                {admin && (
+                  <RemoveRegistrationButton eventId={event.id} userId={r.userId} athleteName={r.user.name} />
+                )}
               </div>
             ))
           )}
