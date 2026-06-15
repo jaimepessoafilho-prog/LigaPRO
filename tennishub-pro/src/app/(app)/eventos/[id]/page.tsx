@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { Card, SectionTitle, Tag } from '@/components/ui/Card'
 import { RegisterButton } from '@/components/events/RegisterButton'
 import { RemoveRegistrationButton } from '@/components/events/RemoveRegistrationButton'
+import { AdminAddAthlete } from '@/components/events/AdminAddAthlete'
 import { isAdminRole } from '@/lib/nav'
 import {
   FORMAT_LABELS, MATCH_TYPE_LABELS, CATEGORY_LABELS, DRAW_TYPE_LABELS,
@@ -45,6 +46,16 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
   const myReg = event.registrations.find((r) => r.userId === me)
   const admin = isAdminRole(session?.user?.role)
   const st = STATUS[event.status] ?? STATUS.DRAFT
+
+  // Atletas ainda não inscritos (para o admin inscrever)
+  const registeredIds = event.registrations.map((r) => r.userId)
+  const availableAthletes = admin
+    ? await prisma.user.findMany({
+        where: { role: 'ATHLETE', id: { notIn: registeredIds.length ? registeredIds : ['__none__'] } },
+        select: { id: true, name: true },
+        orderBy: { name: 'asc' },
+      })
+    : []
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
@@ -91,6 +102,16 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
         <SectionTitle icon="ti-users" style={{ fontSize: '20px' }}>
           Inscritos <Tag variant="green">{event.registrations.length}</Tag>
         </SectionTitle>
+
+        {admin && (
+          <Card style={{ marginBottom: '12px', background: 'rgba(245,197,24,.06)', borderColor: 'rgba(245,197,24,.3)' }}>
+            <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--gold-d)', textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: '10px' }}>
+              <i className="ti ti-shield-star" style={{ verticalAlign: '-2px' }} /> Gestão do organizador
+            </div>
+            <AdminAddAthlete eventId={event.id} available={availableAthletes} />
+          </Card>
+        )}
+
         <Card>
           {event.registrations.length === 0 ? (
             <p style={{ color: 'var(--text2)', fontSize: '14px', textAlign: 'center', padding: '16px' }}>

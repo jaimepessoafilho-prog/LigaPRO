@@ -3,28 +3,51 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { isAdminRole } from '@/lib/nav'
 
-// Inscreve o atleta logado no evento
-export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+// Inscreve um atleta no evento.
+// Sem body.userId → o próprio atleta (só com inscrições abertas).
+// Com body.userId → admin inscreve qualquer atleta (independe do status, exceto cancelado).
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
   if (!session) return NextResponse.json({ message: 'Não autorizado' }, { status: 401 })
 
   const { id: eventId } = await params
-  const userId = session.user.id
+  const body = await req.json().catch(() => ({}))
+  const targetUserId: string | undefined = body?.userId
+
+  const admin = isAdminRole(session.user.role)
+  const isAdminAdding = !!targetUserId && targetUserId !== session.user.id
+  if (isAdminAdding && !admin) {
+    return NextResponse.json({ message: 'Apenas o admin pode inscrever outros atletas' }, { status: 403 })
+  }
+  const userId = isAdminAdding ? (targetUserId as string) : session.user.id
 
   const event = await prisma.event.findUnique({
     where: { id: eventId },
     include: { _count: { select: { registrations: true } } },
   })
   if (!event) return NextResponse.json({ message: 'Evento não encontrado' }, { status: 404 })
-  if (event.status !== 'OPEN') {
+
+  // Atleta só se auto-inscreve com inscrições abertas; admin inscreve em qualquer fase ativa
+  if (!isAdminAdding && event.status !== 'OPEN') {
     return NextResponse.json({ message: 'As inscrições deste evento não estão abertas' }, { status: 409 })
+  }
+  if (event.status === 'CANCELLED' || event.status === 'FINISHED') {
+    return NextResponse.json({ message: 'Evento encerrado para inscrições' }, { status: 409 })
+  }
+
+  if (isAdminAdding) {
+    const target = await prisma.user.findUnique({ where: { id: userId } })
+    if (!target) return NextResponse.json({ message: 'Atleta não encontrado' }, { status: 404 })
   }
 
   const existing = await prisma.eventRegistration.findUnique({
     where: { eventId_userId: { eventId, userId } },
   })
   if (existing) {
-    return NextResponse.json({ message: 'Você já está inscrito neste evento' }, { status: 409 })
+    return NextResponse.json(
+      { message: isAdminAdding ? 'Atleta já inscrito' : 'Você já está inscrito neste evento' },
+      { status: 409 },
+    )
   }
 
   if (event.maxParticipants && event._count.registrations >= event.maxParticipants) {
