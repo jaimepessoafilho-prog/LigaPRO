@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { notifyAll, MSG } from '@/lib/notifications'
 import { z } from 'zod'
 
 const proposeSchema = z.object({
@@ -59,6 +60,11 @@ export async function POST(req: NextRequest) {
         status: 'PENDING_OPPONENT',
       },
     })
+
+    // Notifica o adversário sobre o convite
+    await notifyAll([
+      { phone: opponent.whatsapp, message: MSG.matchProposed(session.user.name ?? 'Um atleta', event.name) },
+    ])
 
     return NextResponse.json(match, { status: 201 })
   } catch (err: unknown) {

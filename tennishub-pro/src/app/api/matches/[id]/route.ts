@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { computeWinner, getWinPoints, isValidSet } from '@/lib/match-points'
+import { notifyAll, MSG } from '@/lib/notifications'
 import { z } from 'zod'
+
+type SetScore = { p1: number; p2: number }
 
 const setSchema = z.object({ p1: z.coerce.number().int().min(0), p2: z.coerce.number().int().min(0) })
 
@@ -35,12 +38,24 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json({ message: 'Você não participa desta partida' }, { status: 403 })
   }
 
+  // Dados para notificações (nomes, telefones, nome do evento)
+  const [p1, p2, ev] = await Promise.all([
+    prisma.user.findUnique({ where: { id: match.player1Id }, select: { name: true, whatsapp: true } }),
+    match.player2Id
+      ? prisma.user.findUnique({ where: { id: match.player2Id }, select: { name: true, whatsapp: true } })
+      : Promise.resolve(null),
+    prisma.event.findUnique({ where: { id: match.eventId }, select: { name: true } }),
+  ])
+  const eventName = ev?.name ?? 'evento'
+  const myName = (isProposer ? p1?.name : p2?.name) ?? 'Um atleta'
+
   switch (body.action) {
     // Adversário confirma que o jogo vai ocorrer
     case 'confirm-match': {
       if (!isOpponent) return NextResponse.json({ message: 'Apenas o adversário confirma o jogo' }, { status: 403 })
       if (match.status !== 'PENDING_OPPONENT') return NextResponse.json({ message: 'Jogo não está aguardando confirmação' }, { status: 409 })
       const updated = await prisma.match.update({ where: { id }, data: { status: 'SCHEDULED' } })
+      await notifyAll([{ phone: p1?.whatsapp, message: MSG.matchConfirmed(myName, eventName) }])
       return NextResponse.json(updated)
     }
 
@@ -49,6 +64,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       if (!isOpponent) return NextResponse.json({ message: 'Apenas o adversário pode recusar' }, { status: 403 })
       if (match.status !== 'PENDING_OPPONENT') return NextResponse.json({ message: 'Jogo não pode mais ser recusado' }, { status: 409 })
       const updated = await prisma.match.update({ where: { id }, data: { status: 'CANCELLED' } })
+      await notifyAll([{ phone: p1?.whatsapp, message: MSG.matchDeclined(myName, eventName) }])
       return NextResponse.json(updated)
     }
 
@@ -66,6 +82,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         where: { id },
         data: { sets, winnerId, scoreSubmittedById: me, status: 'PENDING_SCORE' },
       })
+      const otherPhone = isProposer ? p2?.whatsapp : p1?.whatsapp
+      await notifyAll([{ phone: otherPhone, message: MSG.scoreSubmitted(myName, sets, eventName) }])
       return NextResponse.json(updated)
     }
 
@@ -96,6 +114,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         }
         return m
       })
+
+      const winnerName = (winnerId === match.player1Id ? p1?.name : p2?.name) ?? 'Vencedor'
+      const sets = (match.sets as unknown as SetScore[]) ?? []
+      await notifyAll([
+        { phone: p1?.whatsapp, message: MSG.resultConfirmed(winnerName, sets, winPoints, eventName) },
+        { phone: p2?.whatsapp, message: MSG.resultConfirmed(winnerName, sets, winPoints, eventName) },
+      ])
       return NextResponse.json(updated)
     }
 
@@ -105,10 +130,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       if (match.scoreSubmittedById === me) {
         return NextResponse.json({ message: 'Você lançou este placar; aguarde o adversário' }, { status: 403 })
       }
+      const submitterPhone = match.scoreSubmittedById === match.player1Id ? p1?.whatsapp : p2?.whatsapp
       const updated = await prisma.match.update({
         where: { id },
         data: { status: 'CONTESTED', sets: [], winnerId: null, scoreSubmittedById: null },
       })
+      await notifyAll([{ phone: submitterPhone, message: MSG.scoreContested(myName, eventName) }])
       return NextResponse.json(updated)
     }
 
