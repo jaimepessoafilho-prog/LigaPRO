@@ -32,3 +32,20 @@ export function getWinPoints(scoringSystem: unknown): number {
 export function isValidSet(s: SetScore): boolean {
   return Number.isFinite(s.p1) && Number.isFinite(s.p2) && s.p1 >= 0 && s.p2 >= 0 && !(s.p1 === 0 && s.p2 === 0)
 }
+
+/**
+ * Mantém apenas os sets até a partida ser decidida (melhor de 3).
+ * Se um jogador vence os 2 primeiros sets (2x0), o 3º é descartado.
+ */
+export function trimToDecided(sets: SetScore[]): SetScore[] {
+  let p1 = 0
+  let p2 = 0
+  const result: SetScore[] = []
+  for (const s of sets) {
+    result.push(s)
+    if (s.p1 > s.p2) p1++
+    else if (s.p2 > s.p1) p2++
+    if (p1 === 2 || p2 === 2) break
+  }
+  return result
+}
