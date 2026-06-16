@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { computeWinner, getWinPoints, isValidSet } from '@/lib/match-points'
 import { notifyAll, MSG } from '@/lib/notifications'
+import { emailAll, EMAIL } from '@/lib/email'
 import { z } from 'zod'
 
 type SetScore = { p1: number; p2: number }
@@ -40,9 +41,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   // Dados para notificações (nomes, telefones, nome do evento)
   const [p1, p2, ev] = await Promise.all([
-    prisma.user.findUnique({ where: { id: match.player1Id }, select: { name: true, whatsapp: true } }),
+    prisma.user.findUnique({ where: { id: match.player1Id }, select: { name: true, whatsapp: true, email: true } }),
     match.player2Id
-      ? prisma.user.findUnique({ where: { id: match.player2Id }, select: { name: true, whatsapp: true } })
+      ? prisma.user.findUnique({ where: { id: match.player2Id }, select: { name: true, whatsapp: true, email: true } })
       : Promise.resolve(null),
     prisma.event.findUnique({ where: { id: match.eventId }, select: { name: true } }),
   ])
@@ -55,7 +56,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       if (!isOpponent) return NextResponse.json({ message: 'Apenas o adversário confirma o jogo' }, { status: 403 })
       if (match.status !== 'PENDING_OPPONENT') return NextResponse.json({ message: 'Jogo não está aguardando confirmação' }, { status: 409 })
       const updated = await prisma.match.update({ where: { id }, data: { status: 'SCHEDULED' } })
-      await notifyAll([{ phone: p1?.whatsapp, message: MSG.matchConfirmed(myName, eventName) }])
+      await Promise.all([
+        notifyAll([{ phone: p1?.whatsapp, message: MSG.matchConfirmed(myName, eventName) }]),
+        emailAll([{ to: p1?.email, ...EMAIL.matchConfirmed(myName, eventName) }]),
+      ])
       return NextResponse.json(updated)
     }
 
@@ -83,7 +87,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         data: { sets, winnerId, scoreSubmittedById: me, status: 'PENDING_SCORE' },
       })
       const otherPhone = isProposer ? p2?.whatsapp : p1?.whatsapp
-      await notifyAll([{ phone: otherPhone, message: MSG.scoreSubmitted(myName, sets, eventName) }])
+      const otherEmail = isProposer ? p2?.email : p1?.email
+      await Promise.all([
+        notifyAll([{ phone: otherPhone, message: MSG.scoreSubmitted(myName, sets, eventName) }]),
+        emailAll([{ to: otherEmail, ...EMAIL.scoreSubmitted(myName, sets, eventName) }]),
+      ])
       return NextResponse.json(updated)
     }
 
@@ -117,9 +125,17 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
       const winnerName = (winnerId === match.player1Id ? p1?.name : p2?.name) ?? 'Vencedor'
       const sets = (match.sets as unknown as SetScore[]) ?? []
-      await notifyAll([
-        { phone: p1?.whatsapp, message: MSG.resultConfirmed(winnerName, sets, winPoints, eventName) },
-        { phone: p2?.whatsapp, message: MSG.resultConfirmed(winnerName, sets, winPoints, eventName) },
+      const resultMsg = MSG.resultConfirmed(winnerName, sets, winPoints, eventName)
+      const resultEmail = EMAIL.resultConfirmed(winnerName, sets, winPoints, eventName)
+      await Promise.all([
+        notifyAll([
+          { phone: p1?.whatsapp, message: resultMsg },
+          { phone: p2?.whatsapp, message: resultMsg },
+        ]),
+        emailAll([
+          { to: p1?.email, ...resultEmail },
+          { to: p2?.email, ...resultEmail },
+        ]),
       ])
       return NextResponse.json(updated)
     }
@@ -131,11 +147,15 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         return NextResponse.json({ message: 'Você lançou este placar; aguarde o adversário' }, { status: 403 })
       }
       const submitterPhone = match.scoreSubmittedById === match.player1Id ? p1?.whatsapp : p2?.whatsapp
+      const submitterEmail = match.scoreSubmittedById === match.player1Id ? p1?.email : p2?.email
       const updated = await prisma.match.update({
         where: { id },
         data: { status: 'CONTESTED', sets: [], winnerId: null, scoreSubmittedById: null },
       })
-      await notifyAll([{ phone: submitterPhone, message: MSG.scoreContested(myName, eventName) }])
+      await Promise.all([
+        notifyAll([{ phone: submitterPhone, message: MSG.scoreContested(myName, eventName) }]),
+        emailAll([{ to: submitterEmail, ...EMAIL.scoreContested(myName, eventName) }]),
+      ])
       return NextResponse.json(updated)
     }
 

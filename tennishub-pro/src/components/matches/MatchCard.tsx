@@ -149,8 +149,11 @@ export function MatchCard({ match, meId }: { match: MatchView; meId: string }) {
               </div>
             ))}
           </div>
-          <div style={{ fontSize: '11px', color: 'var(--text3)', marginBottom: '8px' }}>
+          <div style={{ fontSize: '11px', color: 'var(--text3)', marginBottom: '4px' }}>
             {p1Name} (esq.) × {p2Name} (dir.)
+          </div>
+          <div style={{ fontSize: '10px', color: 'var(--text3)', marginBottom: '8px' }}>
+            Até 3 sets · tie-break em 6-6 nos sets 1 e 2 · 3º set em super tie-break (10 pts)
           </div>
           <button className="btn btn-green btn-sm" disabled={isPending} onClick={submitScore}>
             <i className="ti ti-send" /> Lançar placar

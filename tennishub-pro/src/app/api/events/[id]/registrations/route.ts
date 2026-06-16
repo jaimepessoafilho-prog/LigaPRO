@@ -54,10 +54,44 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ message: 'Evento lotado' }, { status: 409 })
   }
 
+  // Auto-inscrição do atleta fica PENDENTE (aguarda admin); admin já confirma
   const reg = await prisma.eventRegistration.create({
-    data: { eventId, userId, status: 'CONFIRMED' },
+    data: { eventId, userId, status: isAdminAdding ? 'CONFIRMED' : 'PENDING' },
   })
   return NextResponse.json(reg, { status: 201 })
+}
+
+// Admin confirma ou recusa a inscrição de um atleta
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const session = await auth()
+  if (!session || !isAdminRole(session.user.role)) {
+    return NextResponse.json({ message: 'Não autorizado' }, { status: 403 })
+  }
+
+  const { id: eventId } = await params
+  const body = await req.json().catch(() => ({}))
+  const userId: string | undefined = body?.userId
+  const action: string | undefined = body?.action // 'confirm' | 'reject'
+
+  if (!userId || (action !== 'confirm' && action !== 'reject')) {
+    return NextResponse.json({ message: 'Dados inválidos' }, { status: 400 })
+  }
+
+  const reg = await prisma.eventRegistration.findUnique({
+    where: { eventId_userId: { eventId, userId } },
+  })
+  if (!reg) return NextResponse.json({ message: 'Inscrição não encontrada' }, { status: 404 })
+
+  if (action === 'reject') {
+    await prisma.eventRegistration.delete({ where: { id: reg.id } })
+    return NextResponse.json({ ok: true, status: 'REJECTED' })
+  }
+
+  const updated = await prisma.eventRegistration.update({
+    where: { id: reg.id },
+    data: { status: 'CONFIRMED' },
+  })
+  return NextResponse.json(updated)
 }
 
 // Cancela uma inscrição. Sem ?userId → a própria; com ?userId → admin remove o atleta.
