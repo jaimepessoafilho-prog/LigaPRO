@@ -3,9 +3,10 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { useToast } from '@/components/ui/Toast'
+import { Avatar } from '@/components/ui/Avatar'
 
 type SetScore = { p1: number; p2: number }
-type Player = { id: string; name: string } | null
+type Player = { id: string; name: string; avatarUrl?: string | null } | null
 
 export type MatchView = {
   id: string
@@ -93,9 +94,13 @@ export function MatchCard({ match, meId }: { match: MatchView; meId: string }) {
   )
 
   const header = (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px', marginBottom: '10px' }}>
-      <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text)' }}>
-        {p1Name} <span style={{ color: 'var(--clay)', fontFamily: 'var(--font-display)', margin: '0 4px' }}>VS</span> {p2Name}
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginBottom: '10px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '15px', fontWeight: 600, color: 'var(--text)' }}>
+        <Avatar name={p1Name} avatarUrl={match.player1?.avatarUrl} size={28} />
+        <span>{p1Name}</span>
+        <span style={{ color: 'var(--clay)', fontFamily: 'var(--font-display)', margin: '0 2px' }}>VS</span>
+        <span>{p2Name}</span>
+        <Avatar name={p2Name} avatarUrl={match.player2?.avatarUrl} size={28} />
       </div>
       <span style={{ fontSize: '11px', color: 'var(--text3)' }}>
         <i className="ti ti-calendar-event" style={{ verticalAlign: '-2px' }} /> {match.eventName}
