@@ -21,9 +21,11 @@ function rkClass(entry: RankingEntry) {
 export function RankingTable({
   entries,
   currentUserId,
+  showEvents = false,
 }: {
   entries: RankingEntry[]
   currentUserId?: string
+  showEvents?: boolean
 }) {
   if (entries.length === 0) {
     return (
@@ -46,6 +48,7 @@ export function RankingTable({
             <th>Pts</th>
             <th>Vit.</th>
             <th>Jogos</th>
+            {showEvents && <th>Ev.</th>}
             <th>Zona</th>
           </tr>
         </thead>
@@ -77,6 +80,7 @@ export function RankingTable({
                 </td>
                 <td>{e.wins}</td>
                 <td>{e.matches}</td>
+                {showEvents && <td>{e.eventsCount}</td>}
                 <td>{zoneTag(e.tier)}</td>
               </motion.tr>
             )

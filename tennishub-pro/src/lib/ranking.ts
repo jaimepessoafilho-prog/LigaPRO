@@ -8,48 +8,62 @@ export type RankingEntry = {
   totalPoints: number
   wins: number
   matches: number
+  eventsCount: number
   /** Faixa para coloração: podium (top 4), classified (top 8), normal, danger (4 últimos) */
   tier: 'podium' | 'classified' | 'normal' | 'danger'
 }
 
 /**
- * Ranking unificado: lista TODOS os atletas (mesmo com 0 pontos) ordenados por
- * pontos totais no ano. Atletas recém-cadastrados aparecem com 0 pontos.
+ * Ranking. Sem eventId: unificado (soma de todos os eventos, todos os atletas).
+ * Com eventId: apenas o evento informado (participantes confirmados).
  */
-export async function calculateUnifiedRanking(year?: number): Promise<RankingEntry[]> {
+export async function calculateUnifiedRanking(year?: number, eventId?: string): Promise<RankingEntry[]> {
   const currentYear = year ?? new Date().getFullYear()
 
-  const athletes = await prisma.user.findMany({
-    where: { role: 'ATHLETE' },
-    select: { id: true, name: true, avatarUrl: true },
-  })
+  let athletes: { id: string; name: string; avatarUrl: string | null }[]
+  if (eventId) {
+    const regs = await prisma.eventRegistration.findMany({
+      where: { eventId, status: 'CONFIRMED' },
+      include: { user: { select: { id: true, name: true, avatarUrl: true } } },
+    })
+    athletes = regs.map((r) => r.user)
+  } else {
+    athletes = await prisma.user.findMany({
+      where: { role: 'ATHLETE' },
+      select: { id: true, name: true, avatarUrl: true },
+    })
+  }
 
   if (athletes.length === 0) return []
 
   const ids = athletes.map((a) => a.id)
+  const matchScope = eventId ? { eventId } : {}
 
-  const [pointsByUser, winsByUser, matchesByUser] = await Promise.all([
+  const [pointsByUser, winsByUser, matchesByUser, regsByUser] = await Promise.all([
     prisma.rankingPoint.groupBy({
       by: ['userId'],
-      where: { userId: { in: ids }, year: currentYear },
+      where: { userId: { in: ids }, year: currentYear, ...(eventId ? { eventId } : {}) },
       _sum: { points: true },
     }),
     prisma.match.groupBy({
       by: ['winnerId'],
-      where: { winnerId: { in: ids }, status: 'FINISHED' },
+      where: { winnerId: { in: ids }, status: 'FINISHED', ...matchScope },
       _count: { _all: true },
     }),
     prisma.match.findMany({
-      where: {
-        status: 'FINISHED',
-        OR: [{ player1Id: { in: ids } }, { player2Id: { in: ids } }],
-      },
+      where: { status: 'FINISHED', ...matchScope, OR: [{ player1Id: { in: ids } }, { player2Id: { in: ids } }] },
       select: { player1Id: true, player2Id: true },
+    }),
+    prisma.eventRegistration.groupBy({
+      by: ['userId'],
+      where: { userId: { in: ids }, status: 'CONFIRMED' },
+      _count: { _all: true },
     }),
   ])
 
   const pointsMap = new Map(pointsByUser.map((p) => [p.userId, p._sum.points ?? 0]))
   const winsMap = new Map(winsByUser.map((w) => [w.winnerId as string, w._count._all]))
+  const eventsMap = new Map(regsByUser.map((r) => [r.userId, r._count._all]))
   const matchesMap = new Map<string, number>()
   for (const m of matchesByUser) {
     if (m.player1Id) matchesMap.set(m.player1Id, (matchesMap.get(m.player1Id) ?? 0) + 1)
@@ -64,8 +78,9 @@ export async function calculateUnifiedRanking(year?: number): Promise<RankingEnt
       totalPoints: pointsMap.get(a.id) ?? 0,
       wins: winsMap.get(a.id) ?? 0,
       matches: matchesMap.get(a.id) ?? 0,
+      eventsCount: eventsMap.get(a.id) ?? 0,
     }))
-    .sort((x, y) => y.totalPoints - x.totalPoints || x.name.localeCompare(y.name, 'pt-BR'))
+    .sort((x, y) => y.totalPoints - x.totalPoints || y.wins - x.wins || x.name.localeCompare(y.name, 'pt-BR'))
 
   const total = ranked.length
 
