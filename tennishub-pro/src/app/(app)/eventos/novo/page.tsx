@@ -1,9 +1,11 @@
 'use client'
 
-import { useMemo, useState, useTransition } from 'react'
+import { useEffect, useMemo, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
+import { useSession } from 'next-auth/react'
 import { Card, SectionTitle } from '@/components/ui/Card'
 import { useToast } from '@/components/ui/Toast'
+import { isAdminRole } from '@/lib/nav'
 import {
   CBT_RULES,
   FORMAT_LABELS,
@@ -59,7 +61,14 @@ function OptionCard({
 export default function NovoEventoPage() {
   const router = useRouter()
   const toast = useToast()
+  const { data: session, status } = useSession()
+  const admin = isAdminRole(session?.user?.role)
   const [step, setStep] = useState(1)
+
+  // Só admin cria eventos — redireciona atletas
+  useEffect(() => {
+    if (status === 'authenticated' && !admin) router.replace('/eventos')
+  }, [status, admin, router])
   const [isPending, startTransition] = useTransition()
   const [form, setForm] = useState<FormState>({
     name: '', location: '', startDate: '', endDate: '', registrationDeadline: '',
