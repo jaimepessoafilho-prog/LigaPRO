@@ -15,19 +15,18 @@ export const authConfig = {
       if (user) {
         token.id = user.id
         token.role = user.role
-        token.avatarUrl = user.avatarUrl
       }
-      // Atualização disparada por useSession().update() após editar o perfil
-      if (trigger === 'update' && session) {
-        if (session.name) token.name = session.name
-        if ('avatarUrl' in session) token.avatarUrl = session.avatarUrl
+      // IMPORTANTE: não guardar avatarUrl no token — a foto (base64) deixa o
+      // cookie grande demais e causa 494 REQUEST_HEADER_TOO_LARGE. O avatar é
+      // sempre lido do banco nas páginas/componentes.
+      if (trigger === 'update' && session?.name) {
+        token.name = session.name
       }
       return token
     },
     session({ session, token }) {
       session.user.id = token.id as string
       session.user.role = token.role as string
-      session.user.avatarUrl = token.avatarUrl as string | null | undefined
       if (token.name) session.user.name = token.name as string
       return session
     },

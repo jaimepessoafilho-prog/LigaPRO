@@ -6,13 +6,12 @@ import { useSession, signOut } from 'next-auth/react'
 import { NAV_ITEMS, isAdminRole } from '@/lib/nav'
 import { Avatar } from '@/components/ui/Avatar'
 
-export function TopNav() {
+export function TopNav({ avatarUrl }: { avatarUrl?: string | null }) {
   const pathname = usePathname()
   const { data: session } = useSession()
   const role = session?.user?.role
   const admin = isAdminRole(role)
   const name = session?.user?.name ?? 'Atleta'
-  const avatarUrl = session?.user?.avatarUrl
 
   const items = NAV_ITEMS.filter((i) => !i.adminOnly || admin)
 
