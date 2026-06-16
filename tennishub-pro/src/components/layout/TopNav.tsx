@@ -2,9 +2,10 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useSession, signOut } from 'next-auth/react'
+import { useSession } from 'next-auth/react'
 import { NAV_ITEMS, isAdminRole } from '@/lib/nav'
 import { Avatar } from '@/components/ui/Avatar'
+import { LogoutButton } from '@/components/layout/LogoutButton'
 
 export function TopNav({ avatarUrl }: { avatarUrl?: string | null }) {
   const pathname = usePathname()
@@ -38,10 +39,11 @@ export function TopNav({ avatarUrl }: { avatarUrl?: string | null }) {
         <span className={`role-pill ${admin ? 'role-admin' : 'role-atleta'}`}>
           {admin ? 'ADMIN' : 'ATLETA'}
         </span>
-        <div className="user-chip" onClick={() => signOut({ callbackUrl: '/login' })} title="Sair">
+        <Link href="/perfil" className="user-chip" title="Meu perfil" style={{ textDecoration: 'none' }}>
           <Avatar name={name} avatarUrl={avatarUrl} size={30} className="user-av" />
           <span className="user-name">{name.split(' ')[0]}</span>
-        </div>
+        </Link>
+        <LogoutButton variant="icon" />
       </div>
     </nav>
   )
