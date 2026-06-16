@@ -1,17 +1,9 @@
 import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
 import { Card, SectionTitle, Tag } from '@/components/ui/Card'
+import { Avatar } from '@/components/ui/Avatar'
 
 export const dynamic = 'force-dynamic'
-
-function initials(name: string) {
-  return name
-    .split(' ')
-    .slice(0, 2)
-    .map((p) => p[0])
-    .join('')
-    .toUpperCase()
-}
 
 const GENDER_LABEL: Record<string, string> = { MALE: 'M', FEMALE: 'F', OTHER: '—' }
 
@@ -42,14 +34,7 @@ export default async function AtletasPage() {
         ) : (
           athletes.map((a) => (
             <div key={a.id} className="athlete-row">
-              <div className="athlete-av">
-                {a.avatarUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={a.avatarUrl} alt={a.name} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
-                ) : (
-                  initials(a.name)
-                )}
-              </div>
+              <Avatar name={a.name} avatarUrl={a.avatarUrl} />
               <div style={{ flex: 1 }}>
                 <div className="athlete-name">{a.name}</div>
                 <div className="athlete-meta">

@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useSession, signOut } from 'next-auth/react'
 import { NAV_ITEMS, isAdminRole } from '@/lib/nav'
+import { Avatar } from '@/components/ui/Avatar'
 
 export function TopNav() {
   const pathname = usePathname()
@@ -11,12 +12,7 @@ export function TopNav() {
   const role = session?.user?.role
   const admin = isAdminRole(role)
   const name = session?.user?.name ?? 'Atleta'
-  const initials = name
-    .split(' ')
-    .slice(0, 2)
-    .map((p) => p[0])
-    .join('')
-    .toUpperCase()
+  const avatarUrl = session?.user?.avatarUrl
 
   const items = NAV_ITEMS.filter((i) => !i.adminOnly || admin)
 
@@ -44,7 +40,7 @@ export function TopNav() {
           {admin ? 'ADMIN' : 'ATLETA'}
         </span>
         <div className="user-chip" onClick={() => signOut({ callbackUrl: '/login' })} title="Sair">
-          <div className="user-av">{initials}</div>
+          <Avatar name={name} avatarUrl={avatarUrl} size={30} className="user-av" />
           <span className="user-name">{name.split(' ')[0]}</span>
         </div>
       </div>

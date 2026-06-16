@@ -7,6 +7,7 @@ import { RegisterButton } from '@/components/events/RegisterButton'
 import { RemoveRegistrationButton } from '@/components/events/RemoveRegistrationButton'
 import { AdminAddAthlete } from '@/components/events/AdminAddAthlete'
 import { EventStatusControl } from '@/components/events/EventStatusControl'
+import { Avatar } from '@/components/ui/Avatar'
 import { isAdminRole } from '@/lib/nav'
 import {
   FORMAT_LABELS, MATCH_TYPE_LABELS, CATEGORY_LABELS, DRAW_TYPE_LABELS,
@@ -24,10 +25,6 @@ const STATUS: Record<string, { label: string; cls: string }> = {
   CANCELLED: { label: 'Cancelado', cls: 'badge-cont' },
 }
 
-function initials(name: string) {
-  return name.split(' ').slice(0, 2).map((p) => p[0]).join('').toUpperCase()
-}
-
 export default async function EventDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const session = await auth()
@@ -37,7 +34,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
     where: { id },
     include: {
       registrations: {
-        include: { user: { select: { id: true, name: true } } },
+        include: { user: { select: { id: true, name: true, avatarUrl: true } } },
         orderBy: { registeredAt: 'asc' },
       },
     },
@@ -123,7 +120,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
           ) : (
             event.registrations.map((r) => (
               <div key={r.id} className="athlete-row">
-                <div className="athlete-av">{initials(r.user.name)}</div>
+                <Avatar name={r.user.name} avatarUrl={r.user.avatarUrl} />
                 <div style={{ flex: 1 }}>
                   <div className="athlete-name">
                     {r.user.name}
