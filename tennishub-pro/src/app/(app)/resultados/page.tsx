@@ -13,12 +13,13 @@ export default async function ResultadosPage() {
   const me = session?.user?.id ?? ''
 
   const [myRegs, myMatches] = await Promise.all([
-    // Eventos ativos em que EU estou inscrito, com os demais inscritos
+    // Eventos "Todos contra Todos" ativos em que EU estou CONFIRMADO,
+    // com os demais participantes confirmados (possíveis adversários)
     prisma.eventRegistration.findMany({
       where: {
         userId: me,
-        status: { not: 'CANCELLED' },
-        event: { status: { in: ['OPEN', 'IN_PROGRESS'] } },
+        status: 'CONFIRMED',
+        event: { status: { in: ['OPEN', 'IN_PROGRESS'] }, matchType: 'ROUND_ROBIN' },
       },
       include: {
         event: {
@@ -26,7 +27,7 @@ export default async function ResultadosPage() {
             id: true,
             name: true,
             registrations: {
-              where: { status: { not: 'CANCELLED' } },
+              where: { status: 'CONFIRMED' },
               include: { user: { select: { id: true, name: true } } },
             },
           },

@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { Card, SectionTitle, Tag } from '@/components/ui/Card'
 import { RegisterButton } from '@/components/events/RegisterButton'
 import { RemoveRegistrationButton } from '@/components/events/RemoveRegistrationButton'
+import { ConfirmRegistrationButton } from '@/components/events/ConfirmRegistrationButton'
 import { AdminAddAthlete } from '@/components/events/AdminAddAthlete'
 import { EventStatusControl } from '@/components/events/EventStatusControl'
 import { Avatar } from '@/components/ui/Avatar'
@@ -44,6 +45,9 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
   const myReg = event.registrations.find((r) => r.userId === me)
   const admin = isAdminRole(session?.user?.role)
   const st = STATUS[event.status] ?? STATUS.DRAFT
+
+  const confirmed = event.registrations.filter((r) => r.status === 'CONFIRMED')
+  const pending = event.registrations.filter((r) => r.status === 'PENDING')
 
   // Atletas ainda não inscritos (para o admin inscrever)
   const registeredIds = event.registrations.map((r) => r.userId)
@@ -90,35 +94,67 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
           <RegisterButton eventId={event.id} registered={!!myReg} closed={event.status !== 'OPEN'} />
           {event.maxParticipants && (
             <span style={{ fontSize: '12px', color: 'var(--text3)' }}>
-              {event.registrations.length}/{event.maxParticipants} vagas
+              {confirmed.length}/{event.maxParticipants} confirmados
             </span>
           )}
         </div>
+
+        {myReg?.status === 'PENDING' && (
+          <div style={{ marginTop: '12px', padding: '10px 14px', borderRadius: '10px', background: 'rgba(245,197,24,.12)', border: '1px solid rgba(245,197,24,.3)', fontSize: '13px', color: 'var(--gold-d)' }}>
+            <i className="ti ti-clock" style={{ verticalAlign: '-2px' }} /> Inscrição enviada — aguardando confirmação do organizador.
+          </div>
+        )}
       </Card>
 
+      {admin && (
+        <Card style={{ background: 'rgba(245,197,24,.06)', borderColor: 'rgba(245,197,24,.3)' }}>
+          <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--gold-d)', textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: '10px' }}>
+            <i className="ti ti-shield-star" style={{ verticalAlign: '-2px' }} /> Gestão do organizador
+          </div>
+          <EventStatusControl eventId={event.id} status={event.status} />
+          <div style={{ height: '1px', background: 'var(--border)', margin: '14px 0' }} />
+          <AdminAddAthlete eventId={event.id} available={availableAthletes} />
+        </Card>
+      )}
+
+      {/* Pendentes de confirmação */}
+      {pending.length > 0 && (admin || pending.some((r) => r.userId === me)) && (
+        <div>
+          <SectionTitle icon="ti-clock" style={{ fontSize: '20px' }}>
+            Aguardando confirmação <Tag variant="gold">{pending.length}</Tag>
+          </SectionTitle>
+          <Card>
+            {pending.map((r) => (
+              <div key={r.id} className="athlete-row">
+                <Avatar name={r.user.name} avatarUrl={r.user.avatarUrl} />
+                <div style={{ flex: 1 }}>
+                  <div className="athlete-name">
+                    {r.user.name}
+                    {r.userId === me && <span className="me-badge">VOCÊ</span>}
+                  </div>
+                  <div className="athlete-meta">Pendente</div>
+                </div>
+                {admin && (
+                  <ConfirmRegistrationButton eventId={event.id} userId={r.userId} athleteName={r.user.name} />
+                )}
+              </div>
+            ))}
+          </Card>
+        </div>
+      )}
+
+      {/* Confirmados */}
       <div>
         <SectionTitle icon="ti-users" style={{ fontSize: '20px' }}>
-          Inscritos <Tag variant="green">{event.registrations.length}</Tag>
+          Inscritos confirmados <Tag variant="green">{confirmed.length}</Tag>
         </SectionTitle>
-
-        {admin && (
-          <Card style={{ marginBottom: '12px', background: 'rgba(245,197,24,.06)', borderColor: 'rgba(245,197,24,.3)' }}>
-            <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--gold-d)', textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: '10px' }}>
-              <i className="ti ti-shield-star" style={{ verticalAlign: '-2px' }} /> Gestão do organizador
-            </div>
-            <EventStatusControl eventId={event.id} status={event.status} />
-            <div style={{ height: '1px', background: 'var(--border)', margin: '14px 0' }} />
-            <AdminAddAthlete eventId={event.id} available={availableAthletes} />
-          </Card>
-        )}
-
         <Card>
-          {event.registrations.length === 0 ? (
+          {confirmed.length === 0 ? (
             <p style={{ color: 'var(--text2)', fontSize: '14px', textAlign: 'center', padding: '16px' }}>
-              Ninguém inscrito ainda. Seja o primeiro!
+              Nenhum atleta confirmado ainda.
             </p>
           ) : (
-            event.registrations.map((r) => (
+            confirmed.map((r) => (
               <div key={r.id} className="athlete-row">
                 <Avatar name={r.user.name} avatarUrl={r.user.avatarUrl} />
                 <div style={{ flex: 1 }}>

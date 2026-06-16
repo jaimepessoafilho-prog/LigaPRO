@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { notifyAll, MSG } from '@/lib/notifications'
+import { emailAll, EMAIL } from '@/lib/email'
 import { z } from 'zod'
 
 const proposeSchema = z.object({
@@ -50,6 +51,29 @@ export async function POST(req: NextRequest) {
     if (!event) return NextResponse.json({ message: 'Evento não encontrado' }, { status: 404 })
     if (!opponent) return NextResponse.json({ message: 'Adversário não encontrado' }, { status: 404 })
 
+    if (event.matchType !== 'ROUND_ROBIN') {
+      return NextResponse.json(
+        { message: 'Só é possível marcar jogos em eventos "Todos contra Todos"' },
+        { status: 400 },
+      )
+    }
+
+    // Ambos precisam de inscrição CONFIRMADA no evento
+    const [meReg, oppReg] = await Promise.all([
+      prisma.eventRegistration.findUnique({
+        where: { eventId_userId: { eventId: data.eventId, userId: session.user.id } },
+      }),
+      prisma.eventRegistration.findUnique({
+        where: { eventId_userId: { eventId: data.eventId, userId: data.opponentId } },
+      }),
+    ])
+    if (meReg?.status !== 'CONFIRMED') {
+      return NextResponse.json({ message: 'Sua inscrição neste evento ainda não foi confirmada' }, { status: 403 })
+    }
+    if (oppReg?.status !== 'CONFIRMED') {
+      return NextResponse.json({ message: 'O adversário não está confirmado neste evento' }, { status: 400 })
+    }
+
     const match = await prisma.match.create({
       data: {
         eventId: data.eventId,
@@ -61,9 +85,11 @@ export async function POST(req: NextRequest) {
       },
     })
 
-    // Notifica o adversário sobre o convite
-    await notifyAll([
-      { phone: opponent.whatsapp, message: MSG.matchProposed(session.user.name ?? 'Um atleta', event.name) },
+    // Notifica o adversário sobre o convite (WhatsApp + e-mail)
+    const proposerName = session.user.name ?? 'Um atleta'
+    await Promise.all([
+      notifyAll([{ phone: opponent.whatsapp, message: MSG.matchProposed(proposerName, event.name) }]),
+      emailAll([{ to: opponent.email, ...EMAIL.matchProposed(proposerName, event.name) }]),
     ])
 
     return NextResponse.json(match, { status: 201 })

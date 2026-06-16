@@ -54,8 +54,9 @@ export function ScheduleMatchForm({
       <Card>
         <SectionTitle icon="ti-calendar-plus">Marcar Jogo</SectionTitle>
         <p style={{ color: 'var(--text2)', fontSize: '14px' }}>
-          Você ainda não está inscrito em nenhum evento ativo. Inscreva-se em{' '}
-          <strong>Eventos</strong> para marcar jogos.
+          Você ainda não tem inscrição <strong>confirmada</strong> em nenhum evento
+          <strong> Todos contra Todos</strong>. Inscreva-se em <strong>Eventos</strong> e aguarde
+          a confirmação do organizador para marcar jogos.
         </p>
       </Card>
     )
