@@ -27,11 +27,21 @@ const STATUS: Record<string, { label: string; cls: string }> = {
 export default async function EventosPage() {
   const session = await auth()
   const admin = isAdminRole(session?.user?.role)
+  const me = session?.user?.id ?? ''
 
-  const events = await prisma.event.findMany({
-    orderBy: { startDate: 'desc' },
-    include: { _count: { select: { registrations: true } } },
-  })
+  const [events, myRegs] = await Promise.all([
+    prisma.event.findMany({
+      orderBy: { startDate: 'desc' },
+      include: { _count: { select: { registrations: true } } },
+    }),
+    prisma.eventRegistration.findMany({
+      where: { userId: me },
+      select: { eventId: true, status: true },
+    }),
+  ])
+
+  // eventId -> status da minha inscrição
+  const myStatusByEvent = new Map(myRegs.map((r) => [r.eventId, r.status]))
 
   return (
     <div>
@@ -64,10 +74,11 @@ export default async function EventosPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           {events.map((e) => {
             const st = STATUS[e.status] ?? STATUS.DRAFT
+            const myStatus = myStatusByEvent.get(e.id)
             const cardLink: CSSProperties = { textDecoration: 'none', color: 'inherit', display: 'block' }
             return (
               <Link key={e.id} href={`/eventos/${e.id}`} style={cardLink}>
-                <Card>
+                <Card style={myStatus === 'CONFIRMED' ? { borderLeft: '4px solid var(--green)' } : undefined}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', flexWrap: 'wrap' }}>
                     <div>
                       <div style={{ fontFamily: 'var(--font-display)', fontSize: '22px', color: 'var(--navy)', letterSpacing: '.5px' }}>
@@ -78,7 +89,11 @@ export default async function EventosPage() {
                         {new Date(e.startDate).toLocaleDateString('pt-BR')}
                       </div>
                     </div>
-                    <span className={st.cls}>{st.label}</span>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'flex-end' }}>
+                      <span className={st.cls}>{st.label}</span>
+                      {myStatus === 'CONFIRMED' && <span className="badge-ok"><i className="ti ti-circle-check" style={{ verticalAlign: '-2px' }} /> Você está inscrito</span>}
+                      {myStatus === 'PENDING' && <span className="badge-pend"><i className="ti ti-clock" style={{ verticalAlign: '-2px' }} /> Inscrição pendente</span>}
+                    </div>
                   </div>
                   <div style={{ display: 'flex', gap: '6px', marginTop: '12px', flexWrap: 'wrap' }}>
                     <Tag variant="navy">{FORMAT_LABELS[e.format as CBTFormat]}</Tag>
@@ -87,7 +102,7 @@ export default async function EventosPage() {
                     <Tag variant="green">{e._count.registrations} inscritos</Tag>
                   </div>
                   <div style={{ marginTop: '10px', fontSize: '12px', color: 'var(--green-d)', fontWeight: 600 }}>
-                    Ver detalhes e inscrever-se <i className="ti ti-arrow-right" style={{ verticalAlign: '-2px' }} />
+                    {myStatus ? 'Ver detalhes' : 'Ver detalhes e inscrever-se'} <i className="ti ti-arrow-right" style={{ verticalAlign: '-2px' }} />
                   </div>
                 </Card>
               </Link>
