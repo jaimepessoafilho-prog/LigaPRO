@@ -23,8 +23,15 @@ export function RegisterButton({
         method: registered ? 'DELETE' : 'POST',
       })
       if (res.ok) {
-        toast.show(registered ? 'Inscrição cancelada' : 'Inscrição confirmada!', registered ? 'ti-x' : 'ti-check')
-        router.refresh()
+        if (registered) {
+          toast.show('Inscrição cancelada', 'ti-x')
+          router.refresh()
+        } else {
+          // Após inscrever-se, volta para a lista de eventos
+          toast.show('Inscrição enviada! Aguarde a confirmação do organizador.', 'ti-check')
+          router.push('/eventos')
+          router.refresh()
+        }
       } else {
         const data = await res.json().catch(() => ({}))
         toast.show(data.message ?? 'Erro', 'ti-alert-triangle')

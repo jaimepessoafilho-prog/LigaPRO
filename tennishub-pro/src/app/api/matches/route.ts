@@ -74,6 +74,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'O adversário não está confirmado neste evento' }, { status: 400 })
     }
 
+    // Sem duplicidade: já existe jogo (ativo ou realizado) entre os dois neste evento?
+    const existingMatch = await prisma.match.findFirst({
+      where: {
+        eventId: data.eventId,
+        status: { not: 'CANCELLED' },
+        OR: [
+          { player1Id: session.user.id, player2Id: data.opponentId },
+          { player1Id: data.opponentId, player2Id: session.user.id },
+        ],
+      },
+    })
+    if (existingMatch) {
+      return NextResponse.json(
+        { message: 'Já existe um jogo entre vocês neste evento' },
+        { status: 409 },
+      )
+    }
+
     const match = await prisma.match.create({
       data: {
         eventId: data.eventId,

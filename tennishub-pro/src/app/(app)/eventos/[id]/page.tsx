@@ -6,6 +6,7 @@ import { Card, SectionTitle, Tag } from '@/components/ui/Card'
 import { RegisterButton } from '@/components/events/RegisterButton'
 import { RemoveRegistrationButton } from '@/components/events/RemoveRegistrationButton'
 import { ConfirmRegistrationButton } from '@/components/events/ConfirmRegistrationButton'
+import { EventScheduleForm } from '@/components/events/EventScheduleForm'
 import { AdminAddAthlete } from '@/components/events/AdminAddAthlete'
 import { EventStatusControl } from '@/components/events/EventStatusControl'
 import { Avatar } from '@/components/ui/Avatar'
@@ -59,6 +60,32 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
       })
     : []
 
+  // Agendamento dentro do evento (só Todos contra Todos, participante confirmado, evento ativo)
+  const myConfirmed = myReg?.status === 'CONFIRMED'
+  const canSchedule =
+    myConfirmed && event.matchType === 'ROUND_ROBIN' && (event.status === 'OPEN' || event.status === 'IN_PROGRESS')
+
+  let scheduleOpponents: { id: string; name: string }[] = []
+  if (canSchedule) {
+    // Jogos que já tenho neste evento (qualquer status menos cancelado) → evita duplicidade
+    const myMatches = await prisma.match.findMany({
+      where: {
+        eventId: id,
+        status: { not: 'CANCELLED' },
+        OR: [{ player1Id: me }, { player2Id: me }],
+      },
+      select: { player1Id: true, player2Id: true },
+    })
+    const alreadyPlayed = new Set<string>()
+    myMatches.forEach((m) => {
+      alreadyPlayed.add(m.player1Id === me ? (m.player2Id ?? '') : m.player1Id)
+    })
+    scheduleOpponents = confirmed
+      .filter((r) => r.userId !== me && !alreadyPlayed.has(r.userId))
+      .map((r) => ({ id: r.userId, name: r.user.name }))
+      .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
       <Link href="/eventos" style={{ color: 'var(--text3)', fontSize: '13px' }}>
@@ -105,6 +132,12 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
           </div>
         )}
       </Card>
+
+      {canSchedule && (
+        <Card style={{ borderLeft: '4px solid var(--green)' }}>
+          <EventScheduleForm eventId={event.id} opponents={scheduleOpponents} />
+        </Card>
+      )}
 
       {admin && (
         <Card style={{ background: 'rgba(245,197,24,.06)', borderColor: 'rgba(245,197,24,.3)' }}>
