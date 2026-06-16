@@ -126,7 +126,8 @@ export function ProfileForm({ initial }: { initial: Profile }) {
         body: JSON.stringify(form),
       })
       if (res.ok) {
-        await update({ name: form.name, avatarUrl: form.avatarUrl })
+        // Só o nome vai para a sessão; a foto é relida do banco via refresh
+        await update({ name: form.name })
         toast.show('Perfil atualizado!', 'ti-check')
         router.refresh()
       } else {
