@@ -4,6 +4,8 @@ import { prisma } from '@/lib/prisma'
 import { getRankingPosition, calculateUnifiedRanking } from '@/lib/ranking'
 import { StatsCard } from '@/components/ui/StatsCard'
 import { Card, SectionTitle, Tag } from '@/components/ui/Card'
+import { Avatar } from '@/components/ui/Avatar'
+import { ConfirmRegistrationButton } from '@/components/events/ConfirmRegistrationButton'
 import { isAdminRole } from '@/lib/nav'
 
 export const dynamic = 'force-dynamic'
@@ -14,18 +16,35 @@ export default async function DashboardPage() {
   const name = session?.user?.name ?? 'Atleta'
   const admin = isAdminRole(session?.user?.role)
 
-  const [pointsAgg, wins, totalMatches, eventsCount, position, athleteCount] = await Promise.all([
+  const [
+    pointsAgg, wins, totalMatches, eventsCount, position, athleteCount,
+    invitesCount, scoresToConfirm, pendingRegs,
+  ] = await Promise.all([
     prisma.rankingPoint.aggregate({ where: { userId }, _sum: { points: true } }),
     prisma.match.count({ where: { winnerId: userId, status: 'FINISHED' } }),
     prisma.match.count({ where: { status: 'FINISHED', OR: [{ player1Id: userId }, { player2Id: userId }] } }),
     prisma.eventRegistration.count({ where: { userId } }),
     getRankingPosition(userId),
     prisma.user.count({ where: { role: 'ATHLETE' } }),
+    // Pendências do atleta
+    prisma.match.count({ where: { status: 'PENDING_OPPONENT', player2Id: userId } }),
+    prisma.match.count({
+      where: { status: 'PENDING_SCORE', scoreSubmittedById: { not: userId }, OR: [{ player1Id: userId }, { player2Id: userId }] },
+    }),
+    // Pendências do admin: inscrições aguardando aprovação
+    admin
+      ? prisma.eventRegistration.findMany({
+          where: { status: 'PENDING' },
+          include: { user: { select: { id: true, name: true, avatarUrl: true } }, event: { select: { id: true, name: true } } },
+          orderBy: { registeredAt: 'asc' },
+        })
+      : Promise.resolve([]),
   ])
 
   const totalPoints = pointsAgg._sum.points ?? 0
   const podium = (await calculateUnifiedRanking()).slice(0, 4)
   const MEDALS = ['🥇', '🥈', '🥉', '⭐']
+  const athletePending = invitesCount + scoresToConfirm
 
   return (
     <div>
@@ -61,6 +80,47 @@ export default async function DashboardPage() {
           )}
         </div>
       </div>
+
+      {/* Pendências do atleta */}
+      {!admin && athletePending > 0 && (
+        <Card style={{ marginBottom: '16px', borderLeft: '4px solid var(--gold)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+            <div>
+              <div style={{ fontFamily: 'var(--font-display)', fontSize: '20px', color: 'var(--navy)' }}>
+                <i className="ti ti-bell" style={{ color: 'var(--gold-d)', verticalAlign: '-2px' }} /> Você tem {athletePending} pendência(s)
+              </div>
+              <div style={{ fontSize: '13px', color: 'var(--text2)', marginTop: '4px' }}>
+                {invitesCount > 0 && <>📩 {invitesCount} convite(s) de jogo para confirmar. </>}
+                {scoresToConfirm > 0 && <>📊 {scoresToConfirm} placar(es) para confirmar.</>}
+              </div>
+            </div>
+            <Link href="/resultados" className="btn btn-green" style={{ textDecoration: 'none' }}>
+              <i className="ti ti-arrow-right" /> Resolver agora
+            </Link>
+          </div>
+        </Card>
+      )}
+
+      {/* Pendências do admin: aprovação de inscrições */}
+      {admin && pendingRegs.length > 0 && (
+        <Card style={{ marginBottom: '16px', borderLeft: '4px solid var(--gold)' }}>
+          <SectionTitle icon="ti-user-check" style={{ fontSize: '20px' }}>
+            Inscrições aguardando aprovação <Tag variant="gold">{pendingRegs.length}</Tag>
+          </SectionTitle>
+          {pendingRegs.map((r) => (
+            <div key={r.id} className="athlete-row">
+              <Avatar name={r.user.name} avatarUrl={r.user.avatarUrl} />
+              <div style={{ flex: 1 }}>
+                <div className="athlete-name">{r.user.name}</div>
+                <div className="athlete-meta">
+                  <i className="ti ti-calendar-event" style={{ verticalAlign: '-2px' }} /> {r.event.name}
+                </div>
+              </div>
+              <ConfirmRegistrationButton eventId={r.event.id} userId={r.user.id} athleteName={r.user.name} />
+            </div>
+          ))}
+        </Card>
+      )}
 
       {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '16px', marginBottom: '20px' }}>
