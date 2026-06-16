@@ -17,7 +17,7 @@ export default async function DashboardPage() {
   const admin = isAdminRole(session?.user?.role)
 
   const [
-    pointsAgg, wins, totalMatches, eventsCount, position, athleteCount,
+    pointsAgg, wins, totalMatches, eventsCount, position,
     invitesCount, scoresToConfirm, pendingRegs,
   ] = await Promise.all([
     prisma.rankingPoint.aggregate({ where: { userId }, _sum: { points: true } }),
@@ -25,7 +25,6 @@ export default async function DashboardPage() {
     prisma.match.count({ where: { status: 'FINISHED', OR: [{ player1Id: userId }, { player2Id: userId }] } }),
     prisma.eventRegistration.count({ where: { userId } }),
     getRankingPosition(userId),
-    prisma.user.count({ where: { role: 'ATHLETE' } }),
     // Pendências do atleta
     prisma.match.count({ where: { status: 'PENDING_OPPONENT', player2Id: userId } }),
     prisma.match.count({
@@ -42,7 +41,9 @@ export default async function DashboardPage() {
   ])
 
   const totalPoints = pointsAgg._sum.points ?? 0
-  const podium = (await calculateUnifiedRanking()).slice(0, 4)
+  const fullRanking = await calculateUnifiedRanking()
+  const podium = fullRanking.slice(0, 4)
+  const rankingTop = fullRanking.slice(0, 8)
   const MEDALS = ['🥇', '🥈', '🥉', '⭐']
   const athletePending = invitesCount + scoresToConfirm
 
@@ -123,48 +124,62 @@ export default async function DashboardPage() {
       )}
 
       {/* Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '16px', marginBottom: '20px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', marginBottom: '16px' }}>
         <StatsCard label="Pontos" value={totalPoints} icon="⭐" />
         <StatsCard label="Vitórias" value={wins} icon="🏆" />
         <StatsCard label="Partidas" value={totalMatches} icon="🎾" />
         <StatsCard label="Eventos" value={eventsCount} icon="📅" />
       </div>
 
-      {/* Podium */}
-      <Card style={{ marginBottom: '16px' }}>
-        <SectionTitle icon="ti-trophy" style={{ fontSize: '20px', marginBottom: '12px' }}>
-          Pódio da Liga <Tag variant="gold">Top 4</Tag>
+      {/* Podium compacto */}
+      <Card style={{ marginBottom: '16px', padding: '14px' }}>
+        <SectionTitle icon="ti-trophy" style={{ fontSize: '17px', marginBottom: '10px' }}>
+          Pódio <Tag variant="gold">Top 4</Tag>
         </SectionTitle>
         {podium.length === 0 ? (
-          <p style={{ color: 'var(--text2)', fontSize: '14px' }}>
+          <p style={{ color: 'var(--text2)', fontSize: '13px' }}>
             Nenhum atleta cadastrado. <Link href="/register" style={{ color: 'var(--green-d)', fontWeight: 600 }}>Cadastre o primeiro →</Link>
           </p>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '10px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
             {podium.map((p, i) => (
-              <div key={p.userId} style={{ textAlign: 'center', padding: '14px 8px', background: 'var(--bg)', borderRadius: '12px', border: '1px solid var(--border)' }}>
-                <div style={{ fontSize: '24px' }}>{MEDALS[i]}</div>
-                <div style={{ display: 'flex', justifyContent: 'center', margin: '6px 0 4px' }}>
-                  <Avatar name={p.name} avatarUrl={p.avatarUrl} size={40} />
+              <div key={p.userId} style={{ textAlign: 'center', padding: '10px 4px', background: 'var(--bg)', borderRadius: '10px', border: '1px solid var(--border)' }}>
+                <div style={{ fontSize: '18px' }}>{MEDALS[i]}</div>
+                <div style={{ display: 'flex', justifyContent: 'center', margin: '4px 0 2px' }}>
+                  <Avatar name={p.name} avatarUrl={p.avatarUrl} size={34} />
                 </div>
-                <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text)', marginTop: '4px' }}>{p.name}</div>
-                <div style={{ fontFamily: 'var(--font-display)', fontSize: '20px', color: 'var(--green-d)', marginTop: '6px' }}>{p.totalPoints} pts</div>
+                <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text)', lineHeight: 1.2 }}>{p.name.split(' ')[0]}</div>
+                <div style={{ fontFamily: 'var(--font-display)', fontSize: '17px', color: 'var(--green-d)', marginTop: '4px' }}>{p.totalPoints}</div>
               </div>
             ))}
           </div>
         )}
       </Card>
 
-      <Card>
-        <SectionTitle icon="ti-rocket" style={{ fontSize: '18px', marginBottom: '8px' }}>
-          Liga em construção <Tag variant="green">{athleteCount} atletas</Tag>
-        </SectionTitle>
-        <p style={{ color: 'var(--text2)', fontSize: '14px', lineHeight: 1.7 }}>
-          Cadastre atletas em <Link href="/register" style={{ color: 'var(--green-d)', fontWeight: 600 }}>Cadastro</Link> e veja-os
-          aparecer no <Link href="/ranking" style={{ color: 'var(--green-d)', fontWeight: 600 }}>Ranking</Link> e em <Link href="/atletas" style={{ color: 'var(--green-d)', fontWeight: 600 }}>Atletas</Link>.
-          Eventos, partidas e pontuação chegam na Fase 4.
-        </p>
-      </Card>
+      {/* Ranking compacto */}
+      {rankingTop.length > 0 && (
+        <Card style={{ padding: '14px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <SectionTitle icon="ti-medal" style={{ fontSize: '17px', margin: 0 }}>Ranking Geral</SectionTitle>
+            <Link href="/ranking" style={{ fontSize: '12px', color: 'var(--green-d)', fontWeight: 600 }}>Ver completo →</Link>
+          </div>
+          {rankingTop.map((r) => (
+            <div key={r.userId} className="athlete-row" style={{ padding: '8px 0' }}>
+              <span className={`rk-num ${r.position <= 3 ? ['rk-1', 'rk-2', 'rk-3'][r.position - 1] : 'rk-mid'}`} style={{ width: '24px', fontSize: '16px' }}>
+                {r.position}
+              </span>
+              <Avatar name={r.name} avatarUrl={r.avatarUrl} size={30} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div className="athlete-name" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {r.name}
+                  {r.userId === userId && <span className="me-badge">VOCÊ</span>}
+                </div>
+              </div>
+              <span style={{ fontFamily: 'var(--font-display)', fontSize: '16px', color: 'var(--navy)' }}>{r.totalPoints}</span>
+            </div>
+          ))}
+        </Card>
+      )}
     </div>
   )
 }

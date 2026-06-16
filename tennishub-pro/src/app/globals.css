@@ -275,18 +275,18 @@ body {
 
 /* ── STATS CARD ── */
 .stats-card {
-  border-radius: 16px; padding: 20px;
+  border-radius: 14px; padding: 12px 8px;
   background: white; border: 1px solid var(--border);
   box-shadow: 0 2px 8px rgba(0,0,0,.08);
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
-  text-align: center; gap: 4px;
+  text-align: center; gap: 2px;
   transition: all .22s ease;
 }
 .stats-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.10); transform: translateY(-2px); }
-.stats-icon { font-size: 28px; }
-.stats-val  { font-family: var(--font-display); font-size: 36px; color: var(--navy); line-height: 1; }
-.stats-lbl  { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: .5px; font-weight: 600; }
+.stats-icon { font-size: 20px; }
+.stats-val  { font-family: var(--font-display); font-size: 26px; color: var(--navy); line-height: 1; }
+.stats-lbl  { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: .4px; font-weight: 600; }
 
 /* ── TOAST ── */
 .toast {
@@ -348,6 +348,8 @@ tr.t-danger { background: rgba(200,90,26,.04); }
 .zt-d { background: var(--clay-l); color: var(--clay); }
 
 .pts-big { font-family: var(--font-display); font-size: 18px; color: var(--navy); }
+.ss-pos { color: var(--green-d); font-weight: 700; }
+.ss-neg { color: var(--clay); font-weight: 700; }
 .me-badge {
   font-size: 9px; font-weight: 700; padding: 2px 7px;
   background: var(--green); color: var(--navy);
