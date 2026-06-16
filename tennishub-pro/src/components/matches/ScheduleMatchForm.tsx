@@ -93,8 +93,11 @@ export function ScheduleMatchForm({
           )}
         </div>
         <div>
-          <label style={labelStyle}>Data prevista (opcional)</label>
+          <label style={labelStyle}>Data e horário do jogo (proposta)</label>
           <input type="datetime-local" className="input-field" value={scheduledAt} onChange={(e) => setScheduledAt(e.target.value)} />
+          <p style={{ fontSize: '11px', color: 'var(--text3)', marginTop: '4px' }}>
+            O adversário precisa <strong>aceitar este agendamento</strong> para o jogo valer.
+          </p>
         </div>
         <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
           <button className="btn btn-green" disabled={!canSubmit || isPending} onClick={submit}>

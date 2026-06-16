@@ -79,6 +79,19 @@ export function MatchCard({ match, meId }: { match: MatchView; meId: string }) {
   const p1Name = match.player1?.name ?? '—'
   const p2Name = match.player2?.name ?? '—'
 
+  const scheduledLabel = match.scheduledAt
+    ? new Date(match.scheduledAt).toLocaleString('pt-BR', {
+        day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit',
+      })
+    : null
+
+  const dateLine = (
+    <div style={{ fontSize: '12px', color: 'var(--text2)', margin: '6px 0 10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+      <i className="ti ti-calendar-time" style={{ color: 'var(--clay)' }} />
+      {scheduledLabel ? <span>Proposta: <strong>{scheduledLabel}</strong></span> : <span style={{ color: 'var(--text3)' }}>Sem data definida</span>}
+    </div>
+  )
+
   const header = (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px', marginBottom: '10px' }}>
       <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text)' }}>
@@ -111,25 +124,36 @@ export function MatchCard({ match, meId }: { match: MatchView; meId: string }) {
 
       {/* PENDING_OPPONENT */}
       {match.status === 'PENDING_OPPONENT' && isOpponent && (
-        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          <span style={{ fontSize: '12px', color: 'var(--text2)', flex: 1 }}>
-            <strong>{p1Name}</strong> quer jogar com você.
+        <div>
+          <span style={{ fontSize: '13px', color: 'var(--text2)' }}>
+            <strong>{p1Name}</strong> propôs um jogo com você. Você concorda com o agendamento?
           </span>
-          <button className="btn btn-green btn-sm" disabled={isPending} onClick={() => act('confirm-match')}>
-            <i className="ti ti-check" /> Confirmar
-          </button>
-          <button className="btn btn-outline btn-sm" disabled={isPending} onClick={() => act('decline')}>
-            <i className="ti ti-x" /> Recusar
-          </button>
+          {dateLine}
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <button className="btn btn-green btn-sm" disabled={isPending} onClick={() => act('confirm-match')}>
+              <i className="ti ti-check" /> Aceitar agendamento
+            </button>
+            <button className="btn btn-outline btn-sm" disabled={isPending} onClick={() => act('decline')}>
+              <i className="ti ti-x" /> Recusar
+            </button>
+          </div>
         </div>
       )}
       {match.status === 'PENDING_OPPONENT' && isProposer && (
-        <span className="badge-pend">Aguardando {p2Name} confirmar</span>
+        <div>
+          {dateLine}
+          <span className="badge-pend">Aguardando {p2Name} aceitar o agendamento</span>
+        </div>
       )}
 
       {/* SCHEDULED or CONTESTED → lançar placar */}
       {(match.status === 'SCHEDULED' || match.status === 'CONTESTED') && (
         <div>
+          {match.status === 'SCHEDULED' && scheduledLabel && (
+            <div style={{ fontSize: '12px', color: 'var(--green-d)', marginBottom: '8px', fontWeight: 600 }}>
+              <i className="ti ti-calendar-check" style={{ verticalAlign: '-2px' }} /> Agendamento aceito — {scheduledLabel}
+            </div>
+          )}
           {match.status === 'CONTESTED' && (
             <div style={{ fontSize: '12px', color: 'var(--clay)', marginBottom: '8px' }}>
               <i className="ti ti-flag" /> Placar contestado — lance novamente.
