@@ -49,6 +49,8 @@ export function RankingTable({
             <th>Pts</th>
             <th>Vit.</th>
             <th>Jogos</th>
+            <th title="Saldo de sets">S.Sets</th>
+            <th title="Saldo de games">S.Games</th>
             {showEvents && <th>Ev.</th>}
             <th>Zona</th>
           </tr>
@@ -83,6 +85,12 @@ export function RankingTable({
                 </td>
                 <td>{e.wins}</td>
                 <td>{e.matches}</td>
+                <td className={e.setDiff > 0 ? 'ss-pos' : e.setDiff < 0 ? 'ss-neg' : ''}>
+                  {e.setDiff > 0 ? `+${e.setDiff}` : e.setDiff}
+                </td>
+                <td className={e.gameDiff > 0 ? 'ss-pos' : e.gameDiff < 0 ? 'ss-neg' : ''}>
+                  {e.gameDiff > 0 ? `+${e.gameDiff}` : e.gameDiff}
+                </td>
                 {showEvents && <td>{e.eventsCount}</td>}
                 <td>{zoneTag(e.tier)}</td>
               </motion.tr>
