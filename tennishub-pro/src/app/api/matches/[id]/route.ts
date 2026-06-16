@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { computeWinner, getWinPoints, isValidSet } from '@/lib/match-points'
+import { computeWinner, getWinPoints, isValidSet, trimToDecided } from '@/lib/match-points'
 import { notifyAll, MSG } from '@/lib/notifications'
 import { emailAll, EMAIL } from '@/lib/email'
 import { z } from 'zod'
@@ -77,7 +77,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       if (match.status !== 'SCHEDULED' && match.status !== 'CONTESTED') {
         return NextResponse.json({ message: 'Jogo não está liberado para lançar placar' }, { status: 409 })
       }
-      const sets = (body.sets ?? []).filter(isValidSet)
+      // Descarta sets após a decisão (2x0 não tem 3º set)
+      const sets = trimToDecided((body.sets ?? []).filter(isValidSet))
       if (sets.length === 0) return NextResponse.json({ message: 'Informe ao menos um set válido' }, { status: 400 })
       const { winnerId } = computeWinner(sets, match.player1Id, match.player2Id ?? '')
       if (!winnerId) return NextResponse.json({ message: 'O placar não define um vencedor' }, { status: 400 })
