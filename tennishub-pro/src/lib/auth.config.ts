@@ -5,6 +5,8 @@ import type { NextAuthConfig } from 'next-auth'
  * Edge Runtime (middleware). Os providers que tocam o banco ficam em auth.ts.
  */
 export const authConfig = {
+  // Confia no host fornecido pela Vercel (necessário para previews/produção)
+  trustHost: true,
   session: { strategy: 'jwt' },
   pages: { signIn: '/login' },
   providers: [],
