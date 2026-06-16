@@ -6,6 +6,7 @@ import { Card, SectionTitle, Tag } from '@/components/ui/Card'
 import { RegisterButton } from '@/components/events/RegisterButton'
 import { RemoveRegistrationButton } from '@/components/events/RemoveRegistrationButton'
 import { AdminAddAthlete } from '@/components/events/AdminAddAthlete'
+import { EventStatusControl } from '@/components/events/EventStatusControl'
 import { isAdminRole } from '@/lib/nav'
 import {
   FORMAT_LABELS, MATCH_TYPE_LABELS, CATEGORY_LABELS, DRAW_TYPE_LABELS,
@@ -108,6 +109,8 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
             <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--gold-d)', textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: '10px' }}>
               <i className="ti ti-shield-star" style={{ verticalAlign: '-2px' }} /> Gestão do organizador
             </div>
+            <EventStatusControl eventId={event.id} status={event.status} />
+            <div style={{ height: '1px', background: 'var(--border)', margin: '14px 0' }} />
             <AdminAddAthlete eventId={event.id} available={availableAthletes} />
           </Card>
         )}
