@@ -33,8 +33,16 @@ export async function calculateUnifiedRanking(year?: number, eventId?: string): 
     })
     athletes = regs.map((r) => r.user)
   } else {
+    // Geral: todos os atletas + qualquer pessoa que participe (inscrição confirmada
+    // ou que já pontuou), inclusive admin que joga.
     athletes = await prisma.user.findMany({
-      where: { role: 'ATHLETE' },
+      where: {
+        OR: [
+          { role: 'ATHLETE' },
+          { registrations: { some: { status: 'CONFIRMED' } } },
+          { rankingPoints: { some: {} } },
+        ],
+      },
       select: { id: true, name: true, avatarUrl: true },
     })
   }
