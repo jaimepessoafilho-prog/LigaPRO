@@ -16,8 +16,8 @@ export default async function ResultadosPage() {
     where: { OR: [{ player1Id: me }, { player2Id: me }] },
     orderBy: { updatedAt: 'desc' },
     include: {
-      player1: { select: { id: true, name: true } },
-      player2: { select: { id: true, name: true } },
+      player1: { select: { id: true, name: true, avatarUrl: true } },
+      player2: { select: { id: true, name: true, avatarUrl: true } },
       event: { select: { name: true } },
     },
     take: 100,

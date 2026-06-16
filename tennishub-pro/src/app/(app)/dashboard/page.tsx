@@ -144,6 +144,9 @@ export default async function DashboardPage() {
             {podium.map((p, i) => (
               <div key={p.userId} style={{ textAlign: 'center', padding: '14px 8px', background: 'var(--bg)', borderRadius: '12px', border: '1px solid var(--border)' }}>
                 <div style={{ fontSize: '24px' }}>{MEDALS[i]}</div>
+                <div style={{ display: 'flex', justifyContent: 'center', margin: '6px 0 4px' }}>
+                  <Avatar name={p.name} avatarUrl={p.avatarUrl} size={40} />
+                </div>
                 <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text)', marginTop: '4px' }}>{p.name}</div>
                 <div style={{ fontFamily: 'var(--font-display)', fontSize: '20px', color: 'var(--green-d)', marginTop: '6px' }}>{p.totalPoints} pts</div>
               </div>

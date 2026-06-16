@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion'
 import type { RankingEntry } from '@/lib/ranking'
+import { Avatar } from '@/components/ui/Avatar'
 
 const MEDALS = ['🥇', '🥈', '🥉', '⭐']
 
@@ -71,9 +72,11 @@ export function RankingTable({
                   <span className={`rk-num ${rkClass(e)}`}>{e.position}</span>
                 </td>
                 <td className="name-td">
-                  {e.name}
-                  {medal}
-                  {isMe && <span className="me-badge">VOCÊ</span>}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Avatar name={e.name} avatarUrl={e.avatarUrl} size={28} />
+                    <span>{e.name}{medal}</span>
+                    {isMe && <span className="me-badge">VOCÊ</span>}
+                  </div>
                 </td>
                 <td>
                   <span className="pts-big">{e.totalPoints}</span>
