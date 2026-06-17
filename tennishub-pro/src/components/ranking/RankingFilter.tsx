@@ -4,7 +4,15 @@ import { useRouter } from 'next/navigation'
 
 type EventOption = { id: string; name: string }
 
-export function RankingFilter({ events, selected }: { events: EventOption[]; selected: string }) {
+export function RankingFilter({
+  events,
+  selected,
+  basePath = '/ranking',
+}: {
+  events: EventOption[]
+  selected: string
+  basePath?: string
+}) {
   const router = useRouter()
 
   return (
@@ -18,7 +26,7 @@ export function RankingFilter({ events, selected }: { events: EventOption[]; sel
         value={selected}
         onChange={(e) => {
           const v = e.target.value
-          router.push(v ? `/ranking?event=${v}` : '/ranking')
+          router.push(v ? `${basePath}?event=${v}` : basePath)
         }}
       >
         <option value="">🏆 Geral (soma de todos os eventos)</option>
