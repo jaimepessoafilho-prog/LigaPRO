@@ -52,17 +52,16 @@ export async function inviteDoublesPartner(
     return { ok: false, error: 'AGE_GROUP_VIOLATION' }
   }
 
-  // Convite pendente: marca o convidado como PENDING e guarda o convidador em partnerId
+  // Convidado: PENDING (precisa aceitar) | Convidador: CONFIRMED (já comprometido)
   await prisma.eventRegistration.upsert({
     where: { eventId_userId: { eventId, userId: inviteeId } },
     create: { eventId, userId: inviteeId, status: 'PENDING', partnerId: inviterId },
     update: { status: 'PENDING', partnerId: inviterId },
   })
-  // Garante a inscrição do convidador (também pendente até confirmação)
   await prisma.eventRegistration.upsert({
     where: { eventId_userId: { eventId, userId: inviterId } },
-    create: { eventId, userId: inviterId, status: 'PENDING', partnerId: inviteeId },
-    update: { partnerId: inviteeId },
+    create: { eventId, userId: inviterId, status: 'CONFIRMED', partnerId: inviteeId },
+    update: { status: 'CONFIRMED', partnerId: inviteeId },
   })
 
   await sendWhatsApp(
@@ -106,6 +105,19 @@ export async function confirmDoublesPartner(
     `✅ *LigaPRO*\n\n*${inviteeReg.user.name}* aceitou jogar duplas com você! Vocês estão inscritos. 🏆`,
   )
 
+  return { ok: true }
+}
+
+/** Cancela/recusa a parceria: remove as inscrições dos dois envolvidos. */
+export async function cancelDoublesInvite(eventId: string, userId: string): Promise<{ ok: boolean }> {
+  const reg = await prisma.eventRegistration.findUnique({
+    where: { eventId_userId: { eventId, userId } },
+  })
+  if (!reg) return { ok: false }
+  const partnerId = reg.partnerId
+  await prisma.eventRegistration.deleteMany({
+    where: { eventId, userId: { in: [userId, ...(partnerId ? [partnerId] : [])] } },
+  })
   return { ok: true }
 }
 

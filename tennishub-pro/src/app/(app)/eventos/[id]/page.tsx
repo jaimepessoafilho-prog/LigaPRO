@@ -9,6 +9,7 @@ import { ConfirmRegistrationButton } from '@/components/events/ConfirmRegistrati
 import { EventScheduleForm } from '@/components/events/EventScheduleForm'
 import { GenerateDrawButton } from '@/components/events/GenerateDrawButton'
 import { Bracket } from '@/components/events/Bracket'
+import { DoublesPanel } from '@/components/events/DoublesPanel'
 import { AdminAddAthlete } from '@/components/events/AdminAddAthlete'
 import { EventStatusControl } from '@/components/events/EventStatusControl'
 import { Avatar } from '@/components/ui/Avatar'
@@ -88,6 +89,27 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
       .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))
   }
 
+  // Duplas
+  const isDoublesEvent = event.format === 'DOUBLES'
+  let doublesAvailable: { id: string; name: string }[] = []
+  let partnerName: string | null = null
+  let partnerStatus: string | null = null
+  if (isDoublesEvent) {
+    if (myReg?.partnerId) {
+      const partnerReg = event.registrations.find((r) => r.userId === myReg.partnerId)
+      partnerName = partnerReg?.user.name ?? null
+      partnerStatus = partnerReg?.status ?? null
+    }
+    if (!myReg || !myReg.partnerId) {
+      const regIds = event.registrations.map((r) => r.userId)
+      doublesAvailable = await prisma.user.findMany({
+        where: { role: 'ATHLETE', id: { notIn: regIds.length ? regIds : ['__none__'] } },
+        select: { id: true, name: true },
+        orderBy: { name: 'asc' },
+      })
+    }
+  }
+
   // Chave (mata-mata / híbrido)
   const isBracketEvent = event.matchType !== 'ROUND_ROBIN'
   const draws = isBracketEvent
@@ -138,20 +160,34 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
         </div>
 
         <div style={{ marginTop: '18px', display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-          <RegisterButton eventId={event.id} registered={!!myReg} closed={event.status !== 'OPEN'} />
+          {!isDoublesEvent && <RegisterButton eventId={event.id} registered={!!myReg} closed={event.status !== 'OPEN'} />}
           {event.maxParticipants && (
             <span style={{ fontSize: '12px', color: 'var(--text3)' }}>
               {confirmed.length}/{event.maxParticipants} confirmados
             </span>
           )}
+          {isDoublesEvent && <Tag variant="navy">Evento de duplas — convide um parceiro abaixo</Tag>}
         </div>
 
-        {myReg?.status === 'PENDING' && (
+        {!isDoublesEvent && myReg?.status === 'PENDING' && (
           <div style={{ marginTop: '12px', padding: '10px 14px', borderRadius: '10px', background: 'rgba(245,197,24,.12)', border: '1px solid rgba(245,197,24,.3)', fontSize: '13px', color: 'var(--gold-d)' }}>
             <i className="ti ti-clock" style={{ verticalAlign: '-2px' }} /> Inscrição enviada — aguardando confirmação do organizador.
           </div>
         )}
       </Card>
+
+      {isDoublesEvent && (
+        <DoublesPanel
+          eventId={event.id}
+          registered={!!myReg}
+          myStatus={myReg?.status ?? null}
+          partnerId={myReg?.partnerId ?? null}
+          partnerName={partnerName}
+          partnerStatus={partnerStatus}
+          available={doublesAvailable}
+          open={event.status === 'OPEN'}
+        />
+      )}
 
       {canSchedule && (
         <Card style={{ borderLeft: '4px solid var(--green)' }}>
