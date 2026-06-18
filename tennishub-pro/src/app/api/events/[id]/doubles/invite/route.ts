@@ -1,7 +1,7 @@
 // Convite e confirmação de parceiro de duplas
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
-import { inviteDoublesPartner, confirmDoublesPartner } from '@/lib/doubles'
+import { inviteDoublesPartner, confirmDoublesPartner, cancelDoublesInvite } from '@/lib/doubles'
 
 // POST — convidar parceiro
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -40,4 +40,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const result = await confirmDoublesPartner(id, session.user.id, inviterId)
   if (!result.ok) return NextResponse.json({ message: result.error }, { status: 400 })
   return NextResponse.json({ message: 'Parceria confirmada com sucesso!' })
+}
+
+// DELETE — recusar convite ou desfazer parceria
+export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const session = await auth()
+  if (!session) return NextResponse.json({ message: 'Não autorizado' }, { status: 401 })
+  const { id } = await params
+  const result = await cancelDoublesInvite(id, session.user.id)
+  if (!result.ok) return NextResponse.json({ message: 'Nada para cancelar' }, { status: 404 })
+  return NextResponse.json({ message: 'Parceria desfeita' })
 }
