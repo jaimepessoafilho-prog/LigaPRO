@@ -7,6 +7,8 @@ import { RegisterButton } from '@/components/events/RegisterButton'
 import { RemoveRegistrationButton } from '@/components/events/RemoveRegistrationButton'
 import { ConfirmRegistrationButton } from '@/components/events/ConfirmRegistrationButton'
 import { EventScheduleForm } from '@/components/events/EventScheduleForm'
+import { GenerateDrawButton } from '@/components/events/GenerateDrawButton'
+import { Bracket } from '@/components/events/Bracket'
 import { AdminAddAthlete } from '@/components/events/AdminAddAthlete'
 import { EventStatusControl } from '@/components/events/EventStatusControl'
 import { Avatar } from '@/components/ui/Avatar'
@@ -86,6 +88,24 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
       .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))
   }
 
+  // Chave (mata-mata / híbrido)
+  const isBracketEvent = event.matchType !== 'ROUND_ROBIN'
+  const draws = isBracketEvent
+    ? await prisma.draw.findMany({
+        where: { eventId: id },
+        include: {
+          matches: {
+            include: {
+              player1: { select: { id: true, name: true, avatarUrl: true } },
+              player2: { select: { id: true, name: true, avatarUrl: true } },
+            },
+            orderBy: { createdAt: 'asc' },
+          },
+        },
+        orderBy: { round: 'asc' },
+      })
+    : []
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
       <Link href="/eventos" style={{ color: 'var(--text3)', fontSize: '13px' }}>
@@ -145,9 +165,55 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
             <i className="ti ti-shield-star" style={{ verticalAlign: '-2px' }} /> Gestão do organizador
           </div>
           <EventStatusControl eventId={event.id} status={event.status} />
+          {isBracketEvent && (
+            <>
+              <div style={{ height: '1px', background: 'var(--border)', margin: '14px 0' }} />
+              <div style={{ fontSize: '12px', color: 'var(--text2)', marginBottom: '8px' }}>
+                <i className="ti ti-sitemap" style={{ verticalAlign: '-2px' }} /> Chaveamento (mata-mata)
+              </div>
+              <GenerateDrawButton eventId={event.id} hasDraw={draws.length > 0} />
+            </>
+          )}
           <div style={{ height: '1px', background: 'var(--border)', margin: '14px 0' }} />
           <AdminAddAthlete eventId={event.id} available={availableAthletes} />
         </Card>
+      )}
+
+      {/* Chave do torneio (mata-mata / híbrido) */}
+      {isBracketEvent && (
+        <div>
+          <SectionTitle icon="ti-sitemap" style={{ fontSize: '20px' }}>
+            Chave do torneio
+          </SectionTitle>
+          {draws.length === 0 ? (
+            <Card>
+              <p style={{ color: 'var(--text2)', fontSize: '14px', textAlign: 'center', padding: '12px' }}>
+                {admin ? 'Chave ainda não gerada. Use "Gerar chave" no painel acima.' : 'A chave ainda não foi gerada pelo organizador.'}
+              </p>
+            </Card>
+          ) : (
+            <Card>
+              <Bracket
+                draws={draws.map((d) => ({
+                  id: d.id,
+                  round: d.round,
+                  phase: d.phase,
+                  matches: d.matches.map((m) => ({
+                    id: m.id,
+                    status: m.status,
+                    player1: m.player1,
+                    player2: m.player2,
+                    player1Id: m.player1Id,
+                    player2Id: m.player2Id,
+                    winnerId: m.winnerId,
+                    walkover: m.walkover,
+                    sets: (m.sets as unknown as { p1: number; p2: number }[]) ?? [],
+                  })),
+                }))}
+              />
+            </Card>
+          )}
+        </div>
       )}
 
       {/* Pendentes de confirmação */}
