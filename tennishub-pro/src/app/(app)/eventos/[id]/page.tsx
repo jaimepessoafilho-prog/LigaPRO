@@ -51,7 +51,8 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
   const st = STATUS[event.status] ?? STATUS.DRAFT
 
   const confirmed = event.registrations.filter((r) => r.status === 'CONFIRMED')
-  const pending = event.registrations.filter((r) => r.status === 'PENDING')
+  // Aprovação do admin é só para inscrições de simples; convites de duplas (com partnerId) seguem o aceite entre parceiros
+  const pending = event.registrations.filter((r) => r.status === 'PENDING' && !r.partnerId)
 
   // Atletas ainda não inscritos (para o admin inscrever)
   const registeredIds = event.registrations.map((r) => r.userId)

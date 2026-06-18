@@ -43,7 +43,7 @@ export default async function DashboardPage({
       }),
       admin
         ? prisma.eventRegistration.findMany({
-            where: { status: 'PENDING' },
+            where: { status: 'PENDING', partnerId: null },
             include: { user: { select: { id: true, name: true, avatarUrl: true } }, event: { select: { id: true, name: true } } },
             orderBy: { registeredAt: 'asc' },
           })
