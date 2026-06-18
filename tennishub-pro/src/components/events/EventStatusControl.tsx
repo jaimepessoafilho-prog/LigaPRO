@@ -48,6 +48,21 @@ export function EventStatusControl({ eventId, status }: { eventId: string; statu
   const options = NEXT[status] ?? []
   const canCancel = status !== 'FINISHED' && status !== 'CANCELLED'
 
+  function deleteEvent() {
+    if (!window.confirm('EXCLUIR este evento permanentemente? Todas as inscrições, partidas e pontos deste evento serão removidos. Não pode ser desfeito.')) return
+    startTransition(async () => {
+      const res = await fetch(`/api/events/${eventId}`, { method: 'DELETE' })
+      if (res.ok) {
+        toast.show('Evento excluído', 'ti-trash')
+        router.push('/eventos')
+        router.refresh()
+      } else {
+        const data = await res.json().catch(() => ({}))
+        toast.show(data.message ?? 'Erro ao excluir', 'ti-alert-triangle')
+      }
+    })
+  }
+
   return (
     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
       {options.map((o) => (
@@ -67,9 +82,14 @@ export function EventStatusControl({ eventId, status }: { eventId: string; statu
           <i className="ti ti-ban" /> Cancelar evento
         </button>
       )}
-      {options.length === 0 && !canCancel && (
-        <span style={{ fontSize: '12px', color: 'var(--text3)' }}>Evento encerrado.</span>
-      )}
+      <button
+        className="btn btn-sm"
+        style={{ background: 'var(--red)', color: 'white', border: '1.5px solid var(--red)' }}
+        disabled={isPending}
+        onClick={deleteEvent}
+      >
+        <i className="ti ti-trash" /> Excluir evento
+      </button>
     </div>
   )
 }

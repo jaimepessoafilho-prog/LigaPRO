@@ -239,14 +239,14 @@ enum MatchStatus {
 model RankingPoint {
   id        String   @id @default(cuid())
   userId    String
-  eventId   String
+  eventId   String?  // pode ficar nulo se o evento for excluído (pontos preservados)
   points    Int
   position  Int
   year      Int
   awardedAt DateTime @default(now())
 
-  user  User  @relation(fields: [userId], references: [id])
-  event Event @relation(fields: [eventId], references: [id])
+  user  User   @relation(fields: [userId], references: [id])
+  event Event? @relation(fields: [eventId], references: [id])
 
   @@unique([userId, eventId])
   @@map("ranking_points")

@@ -8,6 +8,29 @@ const patchSchema = z.object({
   status: z.enum(['DRAFT', 'OPEN', 'CLOSED', 'IN_PROGRESS', 'FINISHED', 'CANCELLED']),
 })
 
+// Exclui o evento e tudo associado (partidas, chaves, inscrições, pontos). Apenas admin.
+export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const session = await auth()
+  if (!session || !isAdminRole(session.user.role)) {
+    return NextResponse.json({ message: 'Não autorizado' }, { status: 403 })
+  }
+
+  const { id } = await params
+  const event = await prisma.event.findUnique({ where: { id }, select: { id: true } })
+  if (!event) return NextResponse.json({ message: 'Evento não encontrado' }, { status: 404 })
+
+  await prisma.$transaction([
+    // Preserva os pontos conquistados: apenas desvincula do evento (eventId → null)
+    prisma.rankingPoint.updateMany({ where: { eventId: id }, data: { eventId: null } }),
+    prisma.match.deleteMany({ where: { eventId: id } }),
+    prisma.draw.deleteMany({ where: { eventId: id } }),
+    prisma.eventRegistration.deleteMany({ where: { eventId: id } }),
+    prisma.event.delete({ where: { id } }),
+  ])
+
+  return NextResponse.json({ ok: true })
+}
+
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
   if (!session || !isAdminRole(session.user.role)) {

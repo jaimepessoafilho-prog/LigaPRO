@@ -109,17 +109,23 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       const year = event ? new Date(event.startDate).getFullYear() : new Date().getFullYear()
       const winnerId = match.winnerId
 
+      // Admin (organizador) não pontua no ranking
+      const winnerUser = await prisma.user.findUnique({ where: { id: winnerId }, select: { role: true } })
+      const winnerIsAdmin = winnerUser?.role === 'ADMIN' || winnerUser?.role === 'SUPER_ADMIN'
+
       const updated = await prisma.$transaction(async (tx) => {
         const m = await tx.match.update({ where: { id }, data: { status: 'FINISHED' } })
-        const existing = await tx.rankingPoint.findUnique({
-          where: { userId_eventId: { userId: winnerId, eventId: match.eventId } },
-        })
-        if (existing) {
-          await tx.rankingPoint.update({ where: { id: existing.id }, data: { points: existing.points + winPoints } })
-        } else {
-          await tx.rankingPoint.create({
-            data: { userId: winnerId, eventId: match.eventId, points: winPoints, position: 0, year },
+        if (!winnerIsAdmin) {
+          const existing = await tx.rankingPoint.findUnique({
+            where: { userId_eventId: { userId: winnerId, eventId: match.eventId } },
           })
+          if (existing) {
+            await tx.rankingPoint.update({ where: { id: existing.id }, data: { points: existing.points + winPoints } })
+          } else {
+            await tx.rankingPoint.create({
+              data: { userId: winnerId, eventId: match.eventId, points: winPoints, position: 0, year },
+            })
+          }
         }
         return m
       })
