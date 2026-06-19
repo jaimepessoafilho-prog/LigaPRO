@@ -138,3 +138,84 @@ export async function getRankingPosition(userId: string): Promise<number> {
   const idx = ranking.findIndex((r) => r.userId === userId)
   return idx === -1 ? 0 : idx + 1
 }
+
+// ─── Ranking de DUPLAS ───────────────────────────────────────────
+export type DoublesRankingEntry = {
+  position: number
+  userId: string
+  name: string
+  avatarUrl: string | null
+  partnerName: string | null
+  totalPoints: number
+  wins: number
+  matches: number
+  tier: 'podium' | 'classified' | 'normal' | 'danger'
+}
+
+/** Ranking baseado apenas em eventos de DUPLAS (pontos, vitórias e parceiro). */
+export async function calculateDoublesRanking(): Promise<DoublesRankingEntry[]> {
+  const doublesEvents = await prisma.event.findMany({ where: { format: 'DOUBLES' }, select: { id: true } })
+  const evIds = doublesEvents.map((e) => e.id)
+  if (evIds.length === 0) return []
+
+  const regs = await prisma.eventRegistration.findMany({
+    where: { eventId: { in: evIds }, status: 'CONFIRMED' },
+    include: { user: { select: { id: true, name: true, avatarUrl: true } } },
+    orderBy: { registeredAt: 'desc' },
+  })
+  const userMap = new Map<string, { name: string; avatarUrl: string | null; partnerId: string | null }>()
+  for (const r of regs) {
+    if (!userMap.has(r.userId)) userMap.set(r.userId, { name: r.user.name, avatarUrl: r.user.avatarUrl, partnerId: r.partnerId })
+  }
+  const ids = [...userMap.keys()]
+  if (ids.length === 0) return []
+  const idSet = new Set(ids)
+
+  const partnerIds = [...new Set([...userMap.values()].map((u) => u.partnerId).filter(Boolean) as string[])]
+  const partners = partnerIds.length
+    ? await prisma.user.findMany({ where: { id: { in: partnerIds } }, select: { id: true, name: true } })
+    : []
+  const partnerNameMap = new Map(partners.map((p) => [p.id, p.name]))
+
+  const [pts, winsBy, matchesRows] = await Promise.all([
+    prisma.rankingPoint.groupBy({ by: ['userId'], where: { userId: { in: ids }, eventId: { in: evIds } }, _sum: { points: true } }),
+    prisma.match.groupBy({ by: ['winnerId'], where: { winnerId: { in: ids }, status: 'FINISHED', eventId: { in: evIds } }, _count: { _all: true } }),
+    prisma.match.findMany({
+      where: { status: 'FINISHED', eventId: { in: evIds } },
+      select: { player1Id: true, player2Id: true, player3Id: true, player4Id: true },
+    }),
+  ])
+  const ptsMap = new Map(pts.map((p) => [p.userId, p._sum.points ?? 0]))
+  const winsMap = new Map(winsBy.map((w) => [w.winnerId as string, w._count._all]))
+  const matchesMap = new Map<string, number>()
+  for (const m of matchesRows) {
+    for (const pid of [m.player1Id, m.player2Id, m.player3Id, m.player4Id]) {
+      if (pid && idSet.has(pid)) matchesMap.set(pid, (matchesMap.get(pid) ?? 0) + 1)
+    }
+  }
+
+  const ranked = ids
+    .map((id) => {
+      const u = userMap.get(id)!
+      return {
+        userId: id,
+        name: u.name,
+        avatarUrl: u.avatarUrl,
+        partnerName: u.partnerId ? partnerNameMap.get(u.partnerId) ?? null : null,
+        totalPoints: ptsMap.get(id) ?? 0,
+        wins: winsMap.get(id) ?? 0,
+        matches: matchesMap.get(id) ?? 0,
+      }
+    })
+    .sort((a, b) => b.totalPoints - a.totalPoints || b.wins - a.wins || a.name.localeCompare(b.name, 'pt-BR'))
+
+  const total = ranked.length
+  return ranked.map((r, i) => {
+    const position = i + 1
+    let tier: DoublesRankingEntry['tier'] = 'normal'
+    if (position <= 4) tier = 'podium'
+    else if (position <= 8) tier = 'classified'
+    else if (total > 8 && position > total - 4) tier = 'danger'
+    return { ...r, position, tier }
+  })
+}

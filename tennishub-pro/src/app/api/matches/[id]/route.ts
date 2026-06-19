@@ -109,21 +109,27 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       const year = event ? new Date(event.startDate).getFullYear() : new Date().getFullYear()
       const winnerId = match.winnerId
 
-      // Admin (organizador) não pontua no ranking
-      const winnerUser = await prisma.user.findUnique({ where: { id: winnerId }, select: { role: true } })
-      const winnerIsAdmin = winnerUser?.role === 'ADMIN' || winnerUser?.role === 'SUPER_ADMIN'
+      // Em duplas, a dupla vencedora = vencedor + seu parceiro (player3/player4)
+      const winnersToCredit = [winnerId]
+      if (winnerId === match.player1Id && match.player3Id) winnersToCredit.push(match.player3Id)
+      if (winnerId === match.player2Id && match.player4Id) winnersToCredit.push(match.player4Id)
+
+      // Admin (organizador) não pontua
+      const roles = await prisma.user.findMany({ where: { id: { in: winnersToCredit } }, select: { id: true, role: true } })
+      const adminIds = new Set(roles.filter((u) => u.role === 'ADMIN' || u.role === 'SUPER_ADMIN').map((u) => u.id))
+      const creditIds = winnersToCredit.filter((uid) => !adminIds.has(uid))
 
       const updated = await prisma.$transaction(async (tx) => {
         const m = await tx.match.update({ where: { id }, data: { status: 'FINISHED' } })
-        if (!winnerIsAdmin) {
+        for (const uid of creditIds) {
           const existing = await tx.rankingPoint.findUnique({
-            where: { userId_eventId: { userId: winnerId, eventId: match.eventId } },
+            where: { userId_eventId: { userId: uid, eventId: match.eventId } },
           })
           if (existing) {
             await tx.rankingPoint.update({ where: { id: existing.id }, data: { points: existing.points + winPoints } })
           } else {
             await tx.rankingPoint.create({
-              data: { userId: winnerId, eventId: match.eventId, points: winPoints, position: 0, year },
+              data: { userId: uid, eventId: match.eventId, points: winPoints, position: 0, year },
             })
           }
         }
