@@ -10,6 +10,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: '/dashboard', icon: 'ti-dashboard', label: 'Dashboard', mobileLabel: 'Início' },
   { href: '/eventos', icon: 'ti-calendar-event', label: 'Eventos', mobileLabel: 'Eventos' },
   { href: '/ranking', icon: 'ti-medal', label: 'Ranking', mobileLabel: 'Ranking' },
+  { href: '/duplas', icon: 'ti-users-group', label: 'Duplas', mobileLabel: 'Duplas' },
   { href: '/atletas', icon: 'ti-users', label: 'Atletas', mobileLabel: 'Atletas' },
   { href: '/resultados', icon: 'ti-clipboard-list', label: 'Resultados', mobileLabel: 'Jogos' },
   { href: '/perfil', icon: 'ti-user-circle', label: 'Perfil', mobileLabel: 'Perfil' },
