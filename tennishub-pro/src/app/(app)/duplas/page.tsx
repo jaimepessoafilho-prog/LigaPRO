@@ -86,10 +86,10 @@ export default async function DuplasPage({
   let dStreak = 0
   for (const f of form) { if (f === 'V') dStreak++; else break }
   const last5 = form.slice(0, 5).reverse()
-  const myEntry = ranking.find((r) => r.userId === me)
-  const dPosition = myEntry?.position ?? 0
-  const dPoints = myEntry?.totalPoints ?? 0
-  const dPartner = myEntry?.partnerName ?? null
+  const myTeam = ranking.find((t) => t.members.some((mem) => mem.id === me))
+  const dPosition = myTeam?.position ?? 0
+  const dPoints = myTeam?.totalPoints ?? 0
+  const dPartner = myTeam?.members.find((mem) => mem.id !== me)?.name ?? null
   const fmt = (n: number) => (n > 0 ? `+${n}` : `${n}`)
 
   // Por evento ativo: formar/gerir dupla (a marcação de jogos fica na página Jogos)
@@ -211,24 +211,26 @@ export default async function DuplasPage({
           <div className="table-wrap">
             <table>
               <thead>
-                <tr><th>#</th><th className="name-th">Atleta</th><th className="name-th">Parceiro</th><th>Pts</th><th>Vit.</th><th>Jogos</th></tr>
+                <tr><th>#</th><th className="name-th">Dupla</th><th>Pts</th><th>Vit.</th><th>Jogos</th></tr>
               </thead>
               <tbody>
                 {ranking.map((e) => {
-                  const isMe = e.userId === me
+                  const isMe = e.members.some((mem) => mem.id === me)
                   const trClass = e.tier === 'podium' ? 't-podium' : e.tier === 'classified' ? 't-class' : ''
                   const medal = e.position <= 4 ? ' ' + MEDALS[e.position - 1] : ''
                   const rkC = e.position <= 3 ? ['rk-1', 'rk-2', 'rk-3'][e.position - 1] : 'rk-mid'
                   return (
-                    <tr key={e.userId} className={trClass} style={isMe ? { background: 'rgba(0,196,106,.08)' } : undefined}>
-                      <td><span className={`rk-num ${rkC}`}>{e.position}</span></td>
+                    <tr key={e.teamKey} className={trClass} style={isMe ? { background: 'rgba(0,196,106,.08)' } : undefined}>
+                      <td><span className={`rk-num ${rkC}`}>{e.position}{medal}</span></td>
                       <td className="name-td">
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <Avatar name={e.name} avatarUrl={e.avatarUrl} size={26} />
-                          <span>{e.name}{medal}{isMe && <span className="me-badge">VOCÊ</span>}</span>
+                          <div style={{ display: 'flex' }}>
+                            <Avatar name={e.members[0].name} avatarUrl={e.members[0].avatarUrl} size={26} />
+                            <div style={{ marginLeft: '-8px' }}><Avatar name={e.members[1]?.name ?? '?'} avatarUrl={e.members[1]?.avatarUrl} size={26} /></div>
+                          </div>
+                          <span>{e.members[0].name} &amp; {e.members[1]?.name ?? '?'}{isMe && <span className="me-badge">VOCÊ</span>}</span>
                         </div>
                       </td>
-                      <td className="name-td" style={{ color: 'var(--text2)', fontWeight: 500 }}>{e.partnerName ?? '—'}</td>
                       <td><span className="pts-big">{e.totalPoints}</span></td>
                       <td>{e.wins}</td>
                       <td>{e.matches}</td>

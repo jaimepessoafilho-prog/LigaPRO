@@ -108,13 +108,24 @@ export async function confirmDoublesPartner(
   return { ok: true }
 }
 
-/** Cancela/recusa a parceria: remove as inscrições dos dois envolvidos. */
-export async function cancelDoublesInvite(eventId: string, userId: string): Promise<{ ok: boolean }> {
-  const reg = await prisma.eventRegistration.findUnique({
-    where: { eventId_userId: { eventId, userId } },
-  })
-  if (!reg) return { ok: false }
+/** Cancela/recusa a parceria. Dupla já FORMADA (ambos confirmados) só é desfeita por admin. */
+export async function cancelDoublesInvite(
+  eventId: string,
+  userId: string,
+  isAdmin = false,
+): Promise<{ ok: boolean; error?: string }> {
+  const reg = await prisma.eventRegistration.findUnique({ where: { eventId_userId: { eventId, userId } } })
+  if (!reg) return { ok: false, error: 'Nada para cancelar' }
   const partnerId = reg.partnerId
+  const partnerReg = partnerId
+    ? await prisma.eventRegistration.findUnique({ where: { eventId_userId: { eventId, userId: partnerId } } })
+    : null
+
+  const formed = reg.status === 'CONFIRMED' && partnerReg?.status === 'CONFIRMED'
+  if (formed && !isAdmin) {
+    return { ok: false, error: 'Dupla já formada — mudanças só com autorização do organizador' }
+  }
+
   await prisma.eventRegistration.deleteMany({
     where: { eventId, userId: { in: [userId, ...(partnerId ? [partnerId] : [])] } },
   })
