@@ -74,22 +74,29 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'O adversário não está confirmado neste evento' }, { status: 400 })
     }
 
-    // Sem duplicidade: já existe jogo (ativo ou realizado) entre os dois neste evento?
+    // Duplas: cada lado é uma dupla (capitão + parceiro)
+    const isDoubles = event.format === 'DOUBLES'
+    const myPartnerId = isDoubles ? meReg.partnerId : null
+    const oppPartnerId = isDoubles ? oppReg.partnerId : null
+    if (isDoubles && (!myPartnerId || !oppPartnerId)) {
+      return NextResponse.json({ message: 'Ambas as duplas precisam estar formadas (com parceiro confirmado)' }, { status: 400 })
+    }
+
+    // Sem duplicidade — considera os times no caso de duplas
+    const myside = [session.user.id, ...(myPartnerId ? [myPartnerId] : [])]
+    const oppside = [data.opponentId, ...(oppPartnerId ? [oppPartnerId] : [])]
     const existingMatch = await prisma.match.findFirst({
       where: {
         eventId: data.eventId,
         status: { not: 'CANCELLED' },
         OR: [
-          { player1Id: session.user.id, player2Id: data.opponentId },
-          { player1Id: data.opponentId, player2Id: session.user.id },
+          { player1Id: { in: myside }, player2Id: { in: oppside } },
+          { player1Id: { in: oppside }, player2Id: { in: myside } },
         ],
       },
     })
     if (existingMatch) {
-      return NextResponse.json(
-        { message: 'Já existe um jogo entre vocês neste evento' },
-        { status: 409 },
-      )
+      return NextResponse.json({ message: 'Já existe um jogo entre vocês neste evento' }, { status: 409 })
     }
 
     const match = await prisma.match.create({
@@ -97,6 +104,8 @@ export async function POST(req: NextRequest) {
         eventId: data.eventId,
         player1Id: session.user.id,
         player2Id: data.opponentId,
+        player3Id: myPartnerId,
+        player4Id: oppPartnerId,
         scheduledAt: data.scheduledAt ? new Date(data.scheduledAt) : null,
         courtNumber: data.courtNumber ?? null,
         status: 'PENDING_OPPONENT',

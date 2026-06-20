@@ -15,6 +15,8 @@ export type MatchView = {
   player2: Player
   player1Id: string
   player2Id: string | null
+  player1Partner?: string | null
+  player2Partner?: string | null
   eventName: string
   sets: SetScore[]
   winnerId: string | null
@@ -77,8 +79,8 @@ export function MatchCard({ match, meId }: { match: MatchView; meId: string }) {
     act('submit-score', { sets: parsed })
   }
 
-  const p1Name = match.player1?.name ?? '—'
-  const p2Name = match.player2?.name ?? '—'
+  const p1Name = (match.player1?.name ?? '—') + (match.player1Partner ? ` & ${match.player1Partner}` : '')
+  const p2Name = (match.player2?.name ?? '—') + (match.player2Partner ? ` & ${match.player2Partner}` : '')
 
   const scheduledLabel = match.scheduledAt
     ? new Date(match.scheduledAt).toLocaleString('pt-BR', {
