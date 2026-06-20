@@ -83,16 +83,16 @@ export function DoublesPanel({
     )
   }
 
-  // Dupla formada
+  // Dupla formada — não pode ser desfeita pelo atleta (só o organizador)
   if (registered && myStatus === 'CONFIRMED' && partnerId && partnerStatus === 'CONFIRMED') {
     return (
       <Wrap style={{ borderLeft: '4px solid var(--green)' }}>
         <p style={{ fontSize: '14px', color: 'var(--text)' }}>
           ✅ Dupla formada: <strong>Você + {partnerName}</strong>
         </p>
-        <button className="btn btn-outline btn-sm" style={{ marginTop: '10px', borderColor: 'var(--red)', color: 'var(--red)' }} disabled={isPending} onClick={() => call('DELETE', undefined, 'Dupla desfeita')}>
-          <i className="ti ti-user-minus" /> Desfazer dupla
-        </button>
+        <p style={{ fontSize: '12px', color: 'var(--text3)', marginTop: '8px' }}>
+          <i className="ti ti-lock" style={{ verticalAlign: '-2px' }} /> A dupla está fixada para este evento. Mudanças só com autorização do organizador.
+        </p>
       </Wrap>
     )
   }

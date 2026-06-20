@@ -1,6 +1,7 @@
 // Convite e confirmação de parceiro de duplas
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
+import { isAdminRole } from '@/lib/nav'
 import { inviteDoublesPartner, confirmDoublesPartner, cancelDoublesInvite } from '@/lib/doubles'
 
 // POST — convidar parceiro
@@ -47,7 +48,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   const session = await auth()
   if (!session) return NextResponse.json({ message: 'Não autorizado' }, { status: 401 })
   const { id } = await params
-  const result = await cancelDoublesInvite(id, session.user.id)
-  if (!result.ok) return NextResponse.json({ message: 'Nada para cancelar' }, { status: 404 })
+  const result = await cancelDoublesInvite(id, session.user.id, isAdminRole(session.user.role))
+  if (!result.ok) return NextResponse.json({ message: result.error ?? 'Nada para cancelar' }, { status: 403 })
   return NextResponse.json({ message: 'Parceria desfeita' })
 }
