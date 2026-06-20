@@ -152,9 +152,12 @@ export type DoublesRankingEntry = {
   tier: 'podium' | 'classified' | 'normal' | 'danger'
 }
 
-/** Ranking baseado apenas em eventos de DUPLAS (pontos, vitórias e parceiro). */
-export async function calculateDoublesRanking(): Promise<DoublesRankingEntry[]> {
-  const doublesEvents = await prisma.event.findMany({ where: { format: 'DOUBLES' }, select: { id: true } })
+/** Ranking baseado em eventos de DUPLAS (geral ou um evento). */
+export async function calculateDoublesRanking(eventId?: string): Promise<DoublesRankingEntry[]> {
+  const doublesEvents = await prisma.event.findMany({
+    where: { format: 'DOUBLES', ...(eventId ? { id: eventId } : {}) },
+    select: { id: true },
+  })
   const evIds = doublesEvents.map((e) => e.id)
   if (evIds.length === 0) return []
 
