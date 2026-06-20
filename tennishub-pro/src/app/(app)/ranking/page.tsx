@@ -18,7 +18,7 @@ export default async function RankingPage({
 
   const [ranking, events, selectedEvent] = await Promise.all([
     calculateUnifiedRanking(year, eventId),
-    prisma.event.findMany({ select: { id: true, name: true }, orderBy: { startDate: 'desc' } }),
+    prisma.event.findMany({ where: { status: { not: 'CANCELLED' } }, select: { id: true, name: true }, orderBy: { startDate: 'desc' } }),
     eventId ? prisma.event.findUnique({ where: { id: eventId }, select: { name: true } }) : Promise.resolve(null),
   ])
 
