@@ -31,6 +31,8 @@ export default async function EventosPage() {
 
   const [events, myRegs] = await Promise.all([
     prisma.event.findMany({
+      // Atletas não veem eventos cancelados; admin vê tudo para gerenciar
+      where: admin ? {} : { status: { not: 'CANCELLED' } },
       orderBy: { startDate: 'desc' },
       include: { _count: { select: { registrations: true } } },
     }),
@@ -102,7 +104,7 @@ export default async function EventosPage() {
                     <Tag variant="green">{e._count.registrations} inscritos</Tag>
                   </div>
                   <div style={{ marginTop: '10px', fontSize: '12px', color: 'var(--green-d)', fontWeight: 600 }}>
-                    {myStatus ? 'Ver detalhes' : 'Ver detalhes e inscrever-se'} <i className="ti ti-arrow-right" style={{ verticalAlign: '-2px' }} />
+                    {e.status === 'OPEN' && !myStatus ? 'Ver detalhes e inscrever-se' : 'Ver detalhes'} <i className="ti ti-arrow-right" style={{ verticalAlign: '-2px' }} />
                   </div>
                 </Card>
               </Link>
