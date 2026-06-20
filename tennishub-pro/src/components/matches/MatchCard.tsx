@@ -15,6 +15,8 @@ export type MatchView = {
   player2: Player
   player1Id: string
   player2Id: string | null
+  player3Id?: string | null
+  player4Id?: string | null
   player1Partner?: string | null
   player2Partner?: string | null
   eventName: string
@@ -40,9 +42,14 @@ export function MatchCard({ match, meId }: { match: MatchView; meId: string }) {
     { p1: '', p2: '' },
   ])
 
-  const isProposer = match.player1Id === meId
-  const isOpponent = match.player2Id === meId
-  const iSubmittedScore = match.scoreSubmittedById === meId
+  // Times (duplas): A = player1+player3 ; B = player2+player4
+  const teamA = [match.player1Id, match.player3Id].filter(Boolean) as string[]
+  const teamB = [match.player2Id, match.player4Id].filter(Boolean) as string[]
+  const isProposer = teamA.includes(meId)
+  const isOpponent = teamB.includes(meId)
+  const submitterOnA = match.scoreSubmittedById ? teamA.includes(match.scoreSubmittedById) : false
+  // Meu time lançou o placar? (então estou aguardando o adversário confirmar)
+  const iSubmittedScore = !!match.scoreSubmittedById && (isProposer ? submitterOnA : !submitterOnA)
 
   function act(action: string, extra?: object) {
     startTransition(async () => {

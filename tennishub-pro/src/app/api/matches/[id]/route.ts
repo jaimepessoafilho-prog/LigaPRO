@@ -32,12 +32,18 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const match = await prisma.match.findUnique({ where: { id } })
   if (!match) return NextResponse.json({ message: 'Partida não encontrada' }, { status: 404 })
 
-  const isProposer = match.player1Id === me
-  const isOpponent = match.player2Id === me
-  const isParticipant = isProposer || isOpponent
-  if (!isParticipant) {
+  // Times: A = player1 + player3 (parceiro) ; B = player2 + player4 (parceiro)
+  const teamA = [match.player1Id, match.player3Id].filter(Boolean) as string[]
+  const teamB = [match.player2Id, match.player4Id].filter(Boolean) as string[]
+  const onA = teamA.includes(me) // time que propôs
+  const onB = teamB.includes(me) // time adversário
+  const isProposer = onA
+  const isOpponent = onB
+  if (!onA && !onB) {
     return NextResponse.json({ message: 'Você não participa desta partida' }, { status: 403 })
   }
+  // Quem lançou o placar está em qual time?
+  const submitterOnA = match.scoreSubmittedById ? teamA.includes(match.scoreSubmittedById) : false
 
   // Dados para notificações (nomes, telefones, nome do evento)
   const [p1, p2, ev] = await Promise.all([
@@ -99,7 +105,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     // Adversário (quem NÃO lançou) confirma o placar → credita pontos
     case 'confirm-score': {
       if (match.status !== 'PENDING_SCORE') return NextResponse.json({ message: 'Não há placar para confirmar' }, { status: 409 })
-      if (match.scoreSubmittedById === me) {
+      // Confirma quem está no time ADVERSÁRIO ao que lançou (em duplas, qualquer membro)
+      const iCanConfirm = submitterOnA ? onB : onA
+      if (!iCanConfirm) {
         return NextResponse.json({ message: 'Aguarde o adversário confirmar o placar' }, { status: 403 })
       }
       if (!match.winnerId) return NextResponse.json({ message: 'Partida sem vencedor definido' }, { status: 400 })
@@ -156,11 +164,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     // Adversário contesta o placar → volta para lançamento
     case 'contest-score': {
       if (match.status !== 'PENDING_SCORE') return NextResponse.json({ message: 'Não há placar para contestar' }, { status: 409 })
-      if (match.scoreSubmittedById === me) {
-        return NextResponse.json({ message: 'Você lançou este placar; aguarde o adversário' }, { status: 403 })
+      const iCanContest = submitterOnA ? onB : onA
+      if (!iCanContest) {
+        return NextResponse.json({ message: 'Você está no time que lançou; aguarde o adversário' }, { status: 403 })
       }
-      const submitterPhone = match.scoreSubmittedById === match.player1Id ? p1?.whatsapp : p2?.whatsapp
-      const submitterEmail = match.scoreSubmittedById === match.player1Id ? p1?.email : p2?.email
+      const submitterPhone = submitterOnA ? p1?.whatsapp : p2?.whatsapp
+      const submitterEmail = submitterOnA ? p1?.email : p2?.email
       const updated = await prisma.match.update({
         where: { id },
         data: { status: 'CONTESTED', sets: [], winnerId: null, scoreSubmittedById: null },
