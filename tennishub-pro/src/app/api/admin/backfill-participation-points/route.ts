@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { isAdminRole } from '@/lib/nav'
-import { getMatchSides, getWinPoints, PARTICIPATION_POINTS } from '@/lib/match-points'
+import { computeExpectedPoints } from '@/lib/ranking-recompute'
 
 /**
  * Recalcula os pontos de ranking (vitória + participação) de todos os eventos
@@ -16,49 +16,24 @@ export async function POST() {
     return NextResponse.json({ message: 'Não autorizado' }, { status: 403 })
   }
 
-  const events = await prisma.event.findMany({
-    where: { matches: { some: { status: 'FINISHED' } } },
-    select: { id: true, startDate: true, scoringSystem: true },
+  const expected = await computeExpectedPoints()
+  const existing = await prisma.rankingPoint.findMany({
+    where: { OR: expected.map((e) => ({ userId: e.userId, eventId: e.eventId })) },
+    select: { id: true, userId: true, eventId: true, points: true },
   })
+  const existingMap = new Map(existing.map((r) => [`${r.userId}|${r.eventId}`, r]))
 
-  let athletesUpdated = 0
+  const toWrite = expected.filter((e) => (existingMap.get(`${e.userId}|${e.eventId}`)?.points ?? null) !== e.points)
+  const eventsProcessed = new Set(toWrite.map((e) => e.eventId)).size
 
-  for (const event of events) {
-    const winPoints = getWinPoints(event.scoringSystem)
-    const matches = await prisma.match.findMany({
-      where: { eventId: event.id, status: 'FINISHED', winnerId: { not: null } },
-      select: { player1Id: true, player2Id: true, player3Id: true, player4Id: true, winnerId: true },
-    })
+  await prisma.$transaction(
+    toWrite.map((e) => {
+      const row = existingMap.get(`${e.userId}|${e.eventId}`)
+      return row
+        ? prisma.rankingPoint.update({ where: { id: row.id }, data: { points: e.points } })
+        : prisma.rankingPoint.create({ data: { userId: e.userId, eventId: e.eventId, points: e.points, position: 0, year: e.year } })
+    }),
+  )
 
-    const totals = new Map<string, number>()
-    const add = (uid: string, pts: number) => totals.set(uid, (totals.get(uid) ?? 0) + pts)
-    for (const m of matches) {
-      const { winnerSide, loserSide } = getMatchSides(m, m.winnerId!)
-      for (const uid of winnerSide) add(uid, winPoints + PARTICIPATION_POINTS)
-      for (const uid of loserSide) add(uid, PARTICIPATION_POINTS)
-    }
-
-    const userIds = [...totals.keys()]
-    const existing = await prisma.rankingPoint.findMany({
-      where: { eventId: event.id, userId: { in: userIds } },
-      select: { id: true, userId: true },
-    })
-    const existingMap = new Map(existing.map((r) => [r.userId, r]))
-    const year = new Date(event.startDate).getFullYear()
-
-    await prisma.$transaction(async (tx) => {
-      for (const [uid, points] of totals) {
-        const row = existingMap.get(uid)
-        if (row) {
-          await tx.rankingPoint.update({ where: { id: row.id }, data: { points } })
-        } else {
-          await tx.rankingPoint.create({ data: { userId: uid, eventId: event.id, points, position: 0, year } })
-        }
-        athletesUpdated++
-      }
-      await tx.event.update({ where: { id: event.id }, data: { participationBackfilledAt: new Date() } })
-    })
-  }
-
-  return NextResponse.json({ eventsProcessed: events.length, athletesUpdated })
+  return NextResponse.json({ eventsProcessed, athletesUpdated: toWrite.length })
 }

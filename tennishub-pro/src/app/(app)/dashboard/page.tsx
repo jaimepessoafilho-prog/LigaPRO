@@ -8,6 +8,7 @@ import { Avatar } from '@/components/ui/Avatar'
 import { ConfirmRegistrationButton } from '@/components/events/ConfirmRegistrationButton'
 import { RankingFilter } from '@/components/ranking/RankingFilter'
 import { BackfillParticipationButton } from '@/components/admin/BackfillParticipationButton'
+import { countEventsPendingRecalculation } from '@/lib/ranking-recompute'
 import { isAdminRole } from '@/lib/nav'
 
 export const dynamic = 'force-dynamic'
@@ -51,9 +52,7 @@ export default async function DashboardPage({
         : Promise.resolve([]),
       prisma.event.findMany({ where: { status: { not: 'CANCELLED' } }, select: { id: true, name: true }, orderBy: { startDate: 'desc' } }),
       eventId ? prisma.event.findUnique({ where: { id: eventId }, select: { name: true } }) : Promise.resolve(null),
-      admin
-        ? prisma.event.count({ where: { matches: { some: { status: 'FINISHED' } } } })
-        : Promise.resolve(0),
+      admin ? countEventsPendingRecalculation() : Promise.resolve(0),
     ])
 
   // ── Estatísticas pessoais (escopo: geral ou evento) ──
