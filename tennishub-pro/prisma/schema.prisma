@@ -81,6 +81,8 @@ model Event {
   createdById          String
   createdAt            DateTime    @default(now())
   updatedAt            DateTime    @updatedAt
+  // Marca quando o ajuste retroativo do ponto de participação foi aplicado (evita reaplicar)
+  participationBackfilledAt DateTime?
 
   registrations EventRegistration[]
   draws         Draw[]
