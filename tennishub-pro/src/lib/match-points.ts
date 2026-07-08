@@ -18,6 +18,28 @@ export function computeWinner(
   return { winnerId, setsP1, setsP2 }
 }
 
+/** Pontos extra por participação (incentivo a jogar), concedido a vencedor e perdedor. */
+export const PARTICIPATION_POINTS = 1
+
+type MatchSides = { player1Id: string; player2Id: string | null; player3Id: string | null; player4Id: string | null }
+
+/** IDs do lado vencedor e do lado perdedor de uma partida já decidida (considera duplas). */
+export function getMatchSides(match: MatchSides, winnerId: string): { winnerSide: string[]; loserSide: string[] } {
+  const winnerSide = [winnerId]
+  if (winnerId === match.player1Id && match.player3Id) winnerSide.push(match.player3Id)
+  if (winnerId === match.player2Id && match.player4Id) winnerSide.push(match.player4Id)
+
+  const loserSide: string[] = []
+  if (winnerId === match.player1Id) {
+    if (match.player2Id) loserSide.push(match.player2Id)
+    if (match.player4Id) loserSide.push(match.player4Id)
+  } else if (winnerId === match.player2Id) {
+    if (match.player1Id) loserSide.push(match.player1Id)
+    if (match.player3Id) loserSide.push(match.player3Id)
+  }
+  return { winnerSide, loserSide }
+}
+
 /** Pontos de vitória derivados do scoringSystem CBT do evento (fallback 3). */
 export function getWinPoints(scoringSystem: unknown): number {
   if (scoringSystem && typeof scoringSystem === 'object') {

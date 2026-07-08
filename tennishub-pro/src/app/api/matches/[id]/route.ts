@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { computeWinner, getWinPoints, isValidSet, trimToDecided } from '@/lib/match-points'
+import { computeWinner, getWinPoints, getMatchSides, isValidSet, trimToDecided, PARTICIPATION_POINTS } from '@/lib/match-points'
 import { notifyAll, MSG } from '@/lib/notifications'
 import { emailAll, EMAIL } from '@/lib/email'
 import { z } from 'zod'
@@ -117,27 +117,31 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       const year = event ? new Date(event.startDate).getFullYear() : new Date().getFullYear()
       const winnerId = match.winnerId
 
-      // Em duplas, a dupla vencedora = vencedor + seu parceiro (player3/player4)
-      const winnersToCredit = [winnerId]
-      if (winnerId === match.player1Id && match.player3Id) winnersToCredit.push(match.player3Id)
-      if (winnerId === match.player2Id && match.player4Id) winnersToCredit.push(match.player4Id)
+      // Em duplas, a dupla vencedora/perdedora inclui o parceiro (player3/player4)
+      const { winnerSide: winnersToCredit, loserSide: losersToCredit } = getMatchSides(match, winnerId)
 
       // Admin (organizador) não pontua
-      const roles = await prisma.user.findMany({ where: { id: { in: winnersToCredit } }, select: { id: true, role: true } })
+      const roles = await prisma.user.findMany({
+        where: { id: { in: [...winnersToCredit, ...losersToCredit] } },
+        select: { id: true, role: true },
+      })
       const adminIds = new Set(roles.filter((u) => u.role === 'ADMIN' || u.role === 'SUPER_ADMIN').map((u) => u.id))
-      const creditIds = winnersToCredit.filter((uid) => !adminIds.has(uid))
+      // Vencedor: pontos de vitória + incentivo de participação. Perdedor: apenas incentivo de participação.
+      const creditPoints = new Map<string, number>()
+      for (const uid of winnersToCredit) if (!adminIds.has(uid)) creditPoints.set(uid, winPoints + PARTICIPATION_POINTS)
+      for (const uid of losersToCredit) if (!adminIds.has(uid)) creditPoints.set(uid, PARTICIPATION_POINTS)
 
       const updated = await prisma.$transaction(async (tx) => {
         const m = await tx.match.update({ where: { id }, data: { status: 'FINISHED' } })
-        for (const uid of creditIds) {
+        for (const [uid, pts] of creditPoints) {
           const existing = await tx.rankingPoint.findUnique({
             where: { userId_eventId: { userId: uid, eventId: match.eventId } },
           })
           if (existing) {
-            await tx.rankingPoint.update({ where: { id: existing.id }, data: { points: existing.points + winPoints } })
+            await tx.rankingPoint.update({ where: { id: existing.id }, data: { points: existing.points + pts } })
           } else {
             await tx.rankingPoint.create({
-              data: { userId: uid, eventId: match.eventId, points: winPoints, position: 0, year },
+              data: { userId: uid, eventId: match.eventId, points: pts, position: 0, year },
             })
           }
         }
@@ -146,8 +150,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
       const winnerName = (winnerId === match.player1Id ? p1?.name : p2?.name) ?? 'Vencedor'
       const sets = (match.sets as unknown as SetScore[]) ?? []
-      const resultMsg = MSG.resultConfirmed(winnerName, sets, winPoints, eventName)
-      const resultEmail = EMAIL.resultConfirmed(winnerName, sets, winPoints, eventName)
+      const resultMsg = MSG.resultConfirmed(winnerName, sets, winPoints + PARTICIPATION_POINTS, eventName)
+      const resultEmail = EMAIL.resultConfirmed(winnerName, sets, winPoints + PARTICIPATION_POINTS, eventName)
       await Promise.all([
         notifyAll([
           { phone: p1?.whatsapp, message: resultMsg },
