@@ -120,16 +120,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       // Em duplas, a dupla vencedora/perdedora inclui o parceiro (player3/player4)
       const { winnerSide: winnersToCredit, loserSide: losersToCredit } = getMatchSides(match, winnerId)
 
-      // Admin (organizador) não pontua
-      const roles = await prisma.user.findMany({
-        where: { id: { in: [...winnersToCredit, ...losersToCredit] } },
-        select: { id: true, role: true },
-      })
-      const adminIds = new Set(roles.filter((u) => u.role === 'ADMIN' || u.role === 'SUPER_ADMIN').map((u) => u.id))
       // Vencedor: pontos de vitória + incentivo de participação. Perdedor: apenas incentivo de participação.
+      // Quem organiza mas também joga (ex: admin) pontua igual a qualquer outro participante.
       const creditPoints = new Map<string, number>()
-      for (const uid of winnersToCredit) if (!adminIds.has(uid)) creditPoints.set(uid, winPoints + PARTICIPATION_POINTS)
-      for (const uid of losersToCredit) if (!adminIds.has(uid)) creditPoints.set(uid, PARTICIPATION_POINTS)
+      for (const uid of winnersToCredit) creditPoints.set(uid, winPoints + PARTICIPATION_POINTS)
+      for (const uid of losersToCredit) creditPoints.set(uid, PARTICIPATION_POINTS)
 
       const updated = await prisma.$transaction(async (tx) => {
         const m = await tx.match.update({ where: { id }, data: { status: 'FINISHED' } })

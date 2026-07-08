@@ -52,7 +52,7 @@ export default async function DashboardPage({
       prisma.event.findMany({ where: { status: { not: 'CANCELLED' } }, select: { id: true, name: true }, orderBy: { startDate: 'desc' } }),
       eventId ? prisma.event.findUnique({ where: { id: eventId }, select: { name: true } }) : Promise.resolve(null),
       admin
-        ? prisma.event.count({ where: { participationBackfilledAt: null, matches: { some: { status: 'FINISHED' } } } })
+        ? prisma.event.count({ where: { matches: { some: { status: 'FINISHED' } } } })
         : Promise.resolve(0),
     ])
 
@@ -164,17 +164,17 @@ export default async function DashboardPage({
         </Card>
       )}
 
-      {/* Ajuste retroativo: ponto de participação em jogos já finalizados antes da regra */}
+      {/* Recalcular pontos: vitória + participação, para todos que jogaram (inclusive admin) */}
       {admin && pendingBackfillEvents > 0 && (
         <Card style={{ marginBottom: '16px', borderLeft: '4px solid var(--green)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
             <div>
               <div style={{ fontFamily: 'var(--font-display)', fontSize: '19px', color: 'var(--navy)' }}>
-                <i className="ti ti-award" style={{ color: 'var(--green-d)', verticalAlign: '-2px' }} /> Nova regra de pontuação
+                <i className="ti ti-award" style={{ color: 'var(--green-d)', verticalAlign: '-2px' }} /> Recalcular pontos do ranking
               </div>
               <div style={{ fontSize: '13px', color: 'var(--text2)', marginTop: '4px' }}>
-                Vencedor e perdedor agora ganham +1 ponto por partida disputada. {pendingBackfillEvents} evento(s) com jogos já
-                finalizados ainda não recebeu esse ajuste.
+                Recalcula os pontos (vitória + participação) de {pendingBackfillEvents} evento(s) a partir dos jogos já
+                finalizados. Pode rodar quantas vezes precisar.
               </div>
             </div>
             <BackfillParticipationButton pendingEvents={pendingBackfillEvents} />

@@ -2,13 +2,13 @@ import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { isAdminRole } from '@/lib/nav'
-import { getMatchSides, PARTICIPATION_POINTS } from '@/lib/match-points'
+import { getMatchSides, getWinPoints, PARTICIPATION_POINTS } from '@/lib/match-points'
 
 /**
- * Ajuste retroativo (um clique, admin): credita o ponto de participação
- * (+1 vencedor, +1 perdedor) em jogos FINISHED lançados antes dessa regra existir.
- * Cada evento processado é marcado com participationBackfilledAt, então rodar
- * de novo só processa eventos ainda não ajustados (idempotente).
+ * Recalcula os pontos de ranking (vitória + participação) de todos os eventos
+ * com jogos FINISHED, a partir do zero. Idempotente: pode rodar quantas vezes
+ * precisar, sempre convergindo para o total correto — inclusive para quem
+ * organiza e também joga (admin), que antes ficava de fora da pontuação.
  */
 export async function POST() {
   const session = await auth()
@@ -17,44 +17,42 @@ export async function POST() {
   }
 
   const events = await prisma.event.findMany({
-    where: { participationBackfilledAt: null, matches: { some: { status: 'FINISHED' } } },
-    select: { id: true, startDate: true },
+    where: { matches: { some: { status: 'FINISHED' } } },
+    select: { id: true, startDate: true, scoringSystem: true },
   })
 
   let athletesUpdated = 0
 
   for (const event of events) {
+    const winPoints = getWinPoints(event.scoringSystem)
     const matches = await prisma.match.findMany({
       where: { eventId: event.id, status: 'FINISHED', winnerId: { not: null } },
       select: { player1Id: true, player2Id: true, player3Id: true, player4Id: true, winnerId: true },
     })
 
-    const bonusCount = new Map<string, number>()
+    const totals = new Map<string, number>()
+    const add = (uid: string, pts: number) => totals.set(uid, (totals.get(uid) ?? 0) + pts)
     for (const m of matches) {
       const { winnerSide, loserSide } = getMatchSides(m, m.winnerId!)
-      for (const uid of [...winnerSide, ...loserSide]) {
-        bonusCount.set(uid, (bonusCount.get(uid) ?? 0) + 1)
-      }
+      for (const uid of winnerSide) add(uid, winPoints + PARTICIPATION_POINTS)
+      for (const uid of loserSide) add(uid, PARTICIPATION_POINTS)
     }
 
-    const userIds = [...bonusCount.keys()]
-    const [roles, existing] = await Promise.all([
-      prisma.user.findMany({ where: { id: { in: userIds } }, select: { id: true, role: true } }),
-      prisma.rankingPoint.findMany({ where: { eventId: event.id, userId: { in: userIds } }, select: { id: true, userId: true, points: true } }),
-    ])
-    const adminIds = new Set(roles.filter((u) => u.role === 'ADMIN' || u.role === 'SUPER_ADMIN').map((u) => u.id))
+    const userIds = [...totals.keys()]
+    const existing = await prisma.rankingPoint.findMany({
+      where: { eventId: event.id, userId: { in: userIds } },
+      select: { id: true, userId: true },
+    })
     const existingMap = new Map(existing.map((r) => [r.userId, r]))
     const year = new Date(event.startDate).getFullYear()
 
     await prisma.$transaction(async (tx) => {
-      for (const [uid, count] of bonusCount) {
-        if (adminIds.has(uid)) continue
-        const bonus = count * PARTICIPATION_POINTS
+      for (const [uid, points] of totals) {
         const row = existingMap.get(uid)
         if (row) {
-          await tx.rankingPoint.update({ where: { id: row.id }, data: { points: row.points + bonus } })
+          await tx.rankingPoint.update({ where: { id: row.id }, data: { points } })
         } else {
-          await tx.rankingPoint.create({ data: { userId: uid, eventId: event.id, points: bonus, position: 0, year } })
+          await tx.rankingPoint.create({ data: { userId: uid, eventId: event.id, points, position: 0, year } })
         }
         athletesUpdated++
       }

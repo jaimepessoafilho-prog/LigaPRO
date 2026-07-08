@@ -27,16 +27,16 @@ export async function calculateUnifiedRanking(year?: number, eventId?: string): 
 
   let athletes: { id: string; name: string; avatarUrl: string | null }[]
   if (eventId) {
-    // Participantes confirmados do evento, exceto administradores (organizadores)
+    // Participantes confirmados do evento (quem organiza mas também joga entra igual)
     const regs = await prisma.eventRegistration.findMany({
-      where: { eventId, status: 'CONFIRMED', user: { role: 'ATHLETE' } },
+      where: { eventId, status: 'CONFIRMED' },
       include: { user: { select: { id: true, name: true, avatarUrl: true } } },
     })
     athletes = regs.map((r) => r.user)
   } else {
-    // Geral: apenas atletas (admin é organizador, não pontua no ranking)
+    // Geral: qualquer usuário com pelo menos uma inscrição confirmada em algum evento
     athletes = await prisma.user.findMany({
-      where: { role: 'ATHLETE' },
+      where: { registrations: { some: { status: 'CONFIRMED' } } },
       select: { id: true, name: true, avatarUrl: true },
     })
   }
