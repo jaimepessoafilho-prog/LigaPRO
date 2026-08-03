@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { isAdminRole } from '@/lib/nav'
+import { generateRoundRobinMatches } from '@/lib/round-robin'
 import { z } from 'zod'
 
 const patchSchema = z.object({
@@ -48,7 +49,48 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const event = await prisma.event.findUnique({ where: { id } })
   if (!event) return NextResponse.json({ message: 'Evento não encontrado' }, { status: 404 })
 
-  const updated = await prisma.event.update({ where: { id }, data: { status } })
+  const isRanking = event.matchType === 'ROUND_ROBIN'
+
+  // Encerrar o Ranking exige 100% dos confrontos com placar (RF-07)
+  if (status === 'FINISHED' && isRanking) {
+    const pendingMatches = await prisma.match.count({
+      where: { eventId: id, status: { notIn: ['FINISHED', 'CANCELLED'] } },
+    })
+    if (pendingMatches > 0) {
+      return NextResponse.json(
+        { message: `Ainda há ${pendingMatches} jogo(s) sem placar. Feche todos (realizado ou W.O. Admin) antes de encerrar.` },
+        { status: 409 },
+      )
+    }
+  }
+
+  const data: { status: typeof status; registrationsClosedAt?: Date; finishedAt?: Date; closureLog?: object } = { status }
+
+  if (status === 'CLOSED' && isRanking) {
+    data.registrationsClosedAt = new Date()
+  }
+
+  if (status === 'FINISHED' && isRanking) {
+    const [totalMatches, woAdminMatches] = await Promise.all([
+      prisma.match.count({ where: { eventId: id, status: { not: 'CANCELLED' } } }),
+      prisma.match.count({ where: { eventId: id, isAdminScore: true } }),
+    ])
+    data.finishedAt = new Date()
+    data.closureLog = {
+      closedById: session.user.id,
+      closedByName: session.user.name ?? null,
+      closedAt: data.finishedAt.toISOString(),
+      totalMatches,
+      woAdminMatches,
+    }
+  }
+
+  const updated = await prisma.event.update({ where: { id }, data })
+
+  // Gera (se ainda não existirem) todos os confrontos previstos entre os atletas confirmados
+  if (status === 'CLOSED' && isRanking) {
+    await generateRoundRobinMatches(id)
+  }
 
   // Ao finalizar, calcula a posição final de cada atleta pelo total de pontos no evento
   if (status === 'FINISHED') {

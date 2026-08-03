@@ -8,6 +8,8 @@ import { RemoveRegistrationButton } from '@/components/events/RemoveRegistration
 import { ConfirmRegistrationButton } from '@/components/events/ConfirmRegistrationButton'
 import { EventScheduleForm } from '@/components/events/EventScheduleForm'
 import { GenerateDrawButton } from '@/components/events/GenerateDrawButton'
+import { GenerateRoundRobinButton } from '@/components/events/GenerateRoundRobinButton'
+import { EventDatesForm } from '@/components/events/EventDatesForm'
 import { Bracket } from '@/components/events/Bracket'
 import { DoublesPanel } from '@/components/events/DoublesPanel'
 import { AdminAddAthlete } from '@/components/events/AdminAddAthlete'
@@ -111,6 +113,12 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
     }
   }
 
+  // Encerramento do Ranking (RF-07): quantos confrontos ainda não têm placar
+  const isRankingEvent = event.matchType === 'ROUND_ROBIN'
+  const pendingMatches = isRankingEvent && admin
+    ? await prisma.match.count({ where: { eventId: id, status: { notIn: ['FINISHED', 'CANCELLED'] } } })
+    : 0
+
   // Chave (mata-mata / híbrido)
   const isBracketEvent = event.matchType !== 'ROUND_ROBIN'
   const draws = isBracketEvent
@@ -201,7 +209,21 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
           <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--gold-d)', textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: '10px' }}>
             <i className="ti ti-shield-star" style={{ verticalAlign: '-2px' }} /> Gestão do organizador
           </div>
-          <EventStatusControl eventId={event.id} status={event.status} />
+          <EventStatusControl eventId={event.id} status={event.status} isRanking={isRankingEvent} pendingMatches={pendingMatches} />
+          <div style={{ height: '1px', background: 'var(--border)', margin: '14px 0' }} />
+          <div style={{ fontSize: '12px', color: 'var(--text2)', marginBottom: '8px' }}>
+            <i className="ti ti-calendar" style={{ verticalAlign: '-2px' }} /> Datas do evento
+          </div>
+          <EventDatesForm eventId={event.id} startDate={event.startDate.toISOString()} endDate={event.endDate.toISOString()} />
+          {isRankingEvent && event.status !== 'OPEN' && (
+            <>
+              <div style={{ height: '1px', background: 'var(--border)', margin: '14px 0' }} />
+              <div style={{ fontSize: '12px', color: 'var(--text2)', marginBottom: '8px' }}>
+                <i className="ti ti-sitemap" style={{ verticalAlign: '-2px' }} /> Confrontos do Ranking
+              </div>
+              <GenerateRoundRobinButton eventId={event.id} />
+            </>
+          )}
           {isBracketEvent && (
             <>
               <div style={{ height: '1px', background: 'var(--border)', margin: '14px 0' }} />

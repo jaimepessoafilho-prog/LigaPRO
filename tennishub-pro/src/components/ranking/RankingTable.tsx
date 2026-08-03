@@ -4,18 +4,25 @@ import { motion } from 'framer-motion'
 import type { RankingEntry } from '@/lib/ranking'
 import { Avatar } from '@/components/ui/Avatar'
 
-const MEDALS = ['🥇', '🥈', '🥉', '⭐']
-
-function zoneTag(tier: RankingEntry['tier']) {
-  if (tier === 'podium') return <span className="zone-tag zt-p">Pódio</span>
-  if (tier === 'classified') return <span className="zone-tag zt-c">Top 8</span>
-  if (tier === 'danger') return <span className="zone-tag zt-d">Zona ▼</span>
+/** Classe por posição (bandas fixas de 4): A = mais nobre até E = iniciante. 21+ não tem classe. */
+type ClassBand = 'A' | 'B' | 'C' | 'D' | 'E' | null
+function classBand(position: number): ClassBand {
+  if (position <= 4) return 'A'
+  if (position <= 8) return 'B'
+  if (position <= 12) return 'C'
+  if (position <= 16) return 'D'
+  if (position <= 20) return 'E'
   return null
 }
 
-function rkClass(entry: RankingEntry) {
-  if (entry.position <= 4) return ['rk-1', 'rk-2', 'rk-3', 'rk-top'][entry.position - 1]
-  if (entry.tier === 'danger') return 'rk-bot'
+function classBadge(cls: ClassBand) {
+  if (!cls) return null
+  return <span className={`cls-badge cls-${cls}`}>{cls}</span>
+}
+
+function rkClass(position: number) {
+  const cls = classBand(position)
+  if (cls) return `rk-class${cls}`
   return 'rk-mid'
 }
 
@@ -52,15 +59,14 @@ export function RankingTable({
             <th title="Saldo de sets">S.Sets</th>
             <th title="Saldo de games">S.Games</th>
             {showEvents && <th>Ev.</th>}
-            <th>Zona</th>
+            <th>Classe</th>
           </tr>
         </thead>
         <tbody>
           {entries.map((e, i) => {
             const isMe = e.userId === currentUserId
-            const trClass =
-              e.tier === 'podium' ? 't-podium' : e.tier === 'classified' ? 't-class' : e.tier === 'danger' ? 't-danger' : ''
-            const medal = e.position <= 4 ? ' ' + MEDALS[e.position - 1] : ''
+            const cls = classBand(e.position)
+            const trClass = cls ? `tr-class${cls}` : 'tr-unclassed'
             return (
               <motion.tr
                 key={e.userId}
@@ -71,12 +77,12 @@ export function RankingTable({
                 style={isMe ? { background: 'rgba(0,196,106,.08)', borderLeft: '3px solid var(--green)' } : undefined}
               >
                 <td>
-                  <span className={`rk-num ${rkClass(e)}`}>{e.position}</span>
+                  <span className={`rk-num ${rkClass(e.position)}`}>{cls ?? ''}{e.position}</span>
                 </td>
                 <td className="name-td">
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <Avatar name={e.name} avatarUrl={e.avatarUrl} size={28} />
-                    <span>{e.name}{medal}</span>
+                    <span>{e.name}</span>
                     {isMe && <span className="me-badge">VOCÊ</span>}
                   </div>
                 </td>
@@ -92,7 +98,7 @@ export function RankingTable({
                   {e.gameDiff > 0 ? `+${e.gameDiff}` : e.gameDiff}
                 </td>
                 {showEvents && <td>{e.eventsCount}</td>}
-                <td>{zoneTag(e.tier)}</td>
+                <td>{classBadge(cls)}</td>
               </motion.tr>
             )
           })}

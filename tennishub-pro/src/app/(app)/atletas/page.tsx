@@ -40,13 +40,27 @@ export default async function AtletasPage() {
         ) : (
           athletes.map((a) => (
             <div key={a.id} className="athlete-row">
-              <Avatar name={a.name} avatarUrl={a.avatarUrl} />
-              <div style={{ flex: 1 }}>
-                <div className="athlete-name">{a.name}</div>
-                <div className="athlete-meta">
-                  {a.email} · {a.age} anos · {GENDER_LABEL[a.gender] ?? a.gender}
-                </div>
-              </div>
+              {admin ? (
+                <Link href={`/atletas/${a.id}`} style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, textDecoration: 'none', color: 'inherit' }}>
+                  <Avatar name={a.name} avatarUrl={a.avatarUrl} />
+                  <div style={{ flex: 1 }}>
+                    <div className="athlete-name">{a.name}</div>
+                    <div className="athlete-meta">
+                      {a.email} · {a.age} anos · {GENDER_LABEL[a.gender] ?? a.gender}
+                    </div>
+                  </div>
+                </Link>
+              ) : (
+                <>
+                  <Avatar name={a.name} avatarUrl={a.avatarUrl} />
+                  <div style={{ flex: 1 }}>
+                    <div className="athlete-name">{a.name}</div>
+                    <div className="athlete-meta">
+                      {a.email} · {a.age} anos · {GENDER_LABEL[a.gender] ?? a.gender}
+                    </div>
+                  </div>
+                </>
+              )}
               {admin && <DeleteAthleteButton userId={a.id} name={a.name} />}
             </div>
           ))

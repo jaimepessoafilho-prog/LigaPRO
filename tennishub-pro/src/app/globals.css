@@ -347,6 +347,27 @@ tr.t-danger { background: rgba(200,90,26,.04); }
 .zt-c { background: var(--green-l); color: var(--green-d); }
 .zt-d { background: var(--clay-l); color: var(--clay); }
 
+/* Classes de posição (bandas de 4): A = mais nobre (ouro) até E = iniciante — 21+ fica sem classe */
+tr.tr-classA { background: linear-gradient(90deg, rgba(245,197,24,.32), rgba(245,197,24,.08) 65%); border-left: 4px solid var(--gold); }
+tr.tr-classB { background: linear-gradient(90deg, rgba(140,155,175,.38), rgba(140,155,175,.10) 65%); border-left: 4px solid rgb(140,155,175); }
+tr.tr-classC { background: linear-gradient(90deg, rgba(205,127,50,.32), rgba(205,127,50,.09) 65%); border-left: 4px solid rgb(205,127,50); }
+tr.tr-classD { background: linear-gradient(90deg, rgba(0,196,106,.28), rgba(0,196,106,.08) 65%); border-left: 4px solid var(--green); }
+tr.tr-classE { background: linear-gradient(90deg, rgba(37,99,235,.26), rgba(37,99,235,.07) 65%); border-left: 4px solid #2563EB; }
+tr.tr-unclassed { background: linear-gradient(90deg, rgba(224,53,53,.26), rgba(224,53,53,.08) 65%); border-left: 4px solid var(--red); }
+
+.cls-badge { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; font-weight: 800; padding: 3px 10px; border-radius: 9999px; letter-spacing: .4px; white-space: nowrap; }
+.cls-A { background: linear-gradient(135deg, var(--gold), #FFE49A); color: #6B4E00; box-shadow: 0 1px 5px rgba(245,197,24,.55); }
+.cls-B { background: linear-gradient(135deg, rgb(140,155,175), rgb(210,220,230)); color: #1F2933; box-shadow: 0 1px 5px rgba(140,155,175,.5); }
+.cls-C { background: linear-gradient(135deg, rgb(205,127,50), rgb(233,180,135)); color: #5A3410; box-shadow: 0 1px 5px rgba(205,127,50,.5); }
+.cls-D { background: linear-gradient(135deg, var(--green), #6FE3AA); color: #06432A; box-shadow: 0 1px 5px rgba(0,196,106,.5); }
+.cls-E { background: linear-gradient(135deg, #2563EB, #8FB3F7); color: #0B2A66; box-shadow: 0 1px 5px rgba(37,99,235,.5); }
+
+.rk-classA { color: var(--gold-d); }
+.rk-classB { color: rgb(90,105,125); }
+.rk-classC { color: rgb(175,100,35); }
+.rk-classD { color: var(--green-d); }
+.rk-classE { color: #2563EB; }
+
 .pts-big { font-family: var(--font-display); font-size: 18px; color: var(--navy); }
 .ss-pos { color: var(--green-d); font-weight: 700; }
 .ss-neg { color: var(--clay); font-weight: 700; }

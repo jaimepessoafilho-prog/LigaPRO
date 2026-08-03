@@ -37,7 +37,10 @@ export default async function RankingPage({
         {eventId
           ? 'Ranking restrito a este evento (apenas participantes confirmados).'
           : 'Ranking geral: soma dos pontos de todos os eventos. A coluna "Ev." mostra quantos eventos o atleta participa.'}{' '}
-        🥇 Pódio (1º–4º) · 🟢 Top 8 · 🔻 Zona inferior.
+        Classes por posição: <span className="cls-badge cls-A">A</span> 1º–4º ·{' '}
+        <span className="cls-badge cls-B">B</span> 5º–8º · <span className="cls-badge cls-C">C</span> 9º–12º ·{' '}
+        <span className="cls-badge cls-D">D</span> 13º–16º · <span className="cls-badge cls-E">E</span> 17º–20º.
+        A partir do 21º, apenas a posição numérica.
       </p>
     </div>
   )
