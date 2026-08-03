@@ -83,4 +83,16 @@ export const EMAIL = {
       `Em <strong>${eventName}</strong>:<br><br>🏆 Vencedor: <strong>${winnerName}</strong><br>Placar: <strong>${fmtSets(sets)}</strong><br>⭐ +${points} pts no ranking.`,
     ),
   }),
+  dateProposed: (byName: string, eventName: string) => ({
+    subject: `Nova data sugerida — ${eventName}`,
+    html: layout('Data sugerida para o jogo', `<strong>${byName}</strong> sugeriu uma data para o jogo em <strong>${eventName}</strong>.<br><br>Abra o app para <strong>aceitar</strong> ou <strong>recusar</strong>.`),
+  }),
+  dateAccepted: (byName: string, eventName: string) => ({
+    subject: `Data combinada — ${eventName}`,
+    html: layout('Data combinada', `<strong>${byName}</strong> aceitou a data sugerida para o jogo em <strong>${eventName}</strong>. Combinado! 📅`),
+  }),
+  dateRejected: (byName: string, eventName: string) => ({
+    subject: `Data recusada — ${eventName}`,
+    html: layout('Data recusada', `<strong>${byName}</strong> recusou a data sugerida para o jogo em <strong>${eventName}</strong>. Sugira outra no app.`),
+  }),
 }

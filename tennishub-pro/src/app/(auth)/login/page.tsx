@@ -4,6 +4,7 @@ import { Suspense, useState, useTransition } from 'react'
 import { signIn } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import { APP_VERSION } from '@/lib/version'
 
 export default function LoginPage() {
   return (
@@ -244,6 +245,8 @@ function LoginForm() {
             Cadastre-se
           </Link>
         </div>
+
+        <div style={{ marginTop: '18px', fontSize: '10px', color: 'rgba(255,255,255,.22)' }}>{APP_VERSION}</div>
       </div>
     </div>
   )

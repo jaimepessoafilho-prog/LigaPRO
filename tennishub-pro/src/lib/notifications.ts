@@ -87,4 +87,13 @@ export const MSG = {
     eventName: string,
   ) =>
     `${HEAD}\n\n✅ Resultado confirmado em *${eventName}*!\n\n🏆 Vencedor: *${winnerName}*\nPlacar: *${fmtSets(sets)}*\n⭐ +${points} pts no ranking.`,
+
+  dateProposed: (byName: string, eventName: string) =>
+    `${HEAD}\n\n*${byName}* sugeriu uma data para o jogo em *${eventName}*.\n\nAbra o app para *aceitar* ou *recusar*.`,
+
+  dateAccepted: (byName: string, eventName: string) =>
+    `${HEAD}\n\n*${byName}* aceitou a data sugerida para o jogo em *${eventName}*. Combinado! 📅`,
+
+  dateRejected: (byName: string, eventName: string) =>
+    `${HEAD}\n\n*${byName}* recusou a data sugerida para o jogo em *${eventName}*. Sugira outra no app.`,
 }

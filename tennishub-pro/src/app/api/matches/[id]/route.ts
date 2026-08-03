@@ -11,8 +11,10 @@ type SetScore = { p1: number; p2: number }
 const setSchema = z.object({ p1: z.coerce.number().int().min(0), p2: z.coerce.number().int().min(0) })
 
 const actionSchema = z.object({
-  action: z.enum(['confirm-match', 'decline', 'submit-score', 'confirm-score', 'contest-score']),
+  action: z.enum(['confirm-match', 'decline', 'submit-score', 'confirm-score', 'contest-score', 'propose-date', 'accept-date', 'reject-date']),
   sets: z.array(setSchema).optional(),
+  scheduledAt: z.string().optional().nullable(),
+  courtNumber: z.coerce.number().int().positive().optional().nullable(),
 })
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -31,6 +33,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const match = await prisma.match.findUnique({ where: { id } })
   if (!match) return NextResponse.json({ message: 'Partida não encontrada' }, { status: 404 })
+
+  const parentEvent = await prisma.event.findUnique({ where: { id: match.eventId }, select: { finishedAt: true } })
+  if (parentEvent?.finishedAt) {
+    return NextResponse.json({ message: 'Evento já encerrado — placares não podem mais ser alterados' }, { status: 409 })
+  }
 
   // Times: A = player1 + player3 (parceiro) ; B = player2 + player4 (parceiro)
   const teamA = [match.player1Id, match.player3Id].filter(Boolean) as string[]
@@ -65,6 +72,76 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       await Promise.all([
         notifyAll([{ phone: p1?.whatsapp, message: MSG.matchConfirmed(myName, eventName) }]),
         emailAll([{ to: p1?.email, ...EMAIL.matchConfirmed(myName, eventName) }]),
+      ])
+      return NextResponse.json(updated)
+    }
+
+    // Um dos lados sugere data/quadra pro jogo — precisa do aceite do adversário pra valer
+    // (mesma transparência do placar: propor → aceitar/recusar). Útil pros jogos gerados pelo
+    // encerramento de inscrições do Ranking, que nascem sem data.
+    case 'propose-date': {
+      if (!onA && !onB) return NextResponse.json({ message: 'Você não participa desta partida' }, { status: 403 })
+      if (match.status !== 'SCHEDULED' && match.status !== 'CONTESTED') {
+        return NextResponse.json({ message: 'Só é possível propor data enquanto o jogo aguarda ser disputado' }, { status: 409 })
+      }
+      if (!body.scheduledAt) return NextResponse.json({ message: 'Informe uma data' }, { status: 400 })
+      const updated = await prisma.match.update({
+        where: { id },
+        data: {
+          proposedScheduledAt: new Date(body.scheduledAt),
+          proposedCourtNumber: body.courtNumber ?? null,
+          dateProposedById: me,
+        },
+      })
+      const otherPhone = onA ? p2?.whatsapp : p1?.whatsapp
+      const otherEmail = onA ? p2?.email : p1?.email
+      await Promise.all([
+        notifyAll([{ phone: otherPhone, message: MSG.dateProposed(myName, eventName) }]),
+        emailAll([{ to: otherEmail, ...EMAIL.dateProposed(myName, eventName) }]),
+      ])
+      return NextResponse.json(updated)
+    }
+
+    // Adversário (quem NÃO propôs) aceita a data sugerida → passa a valer como data combinada
+    case 'accept-date': {
+      if (!match.dateProposedById) return NextResponse.json({ message: 'Não há proposta de data pendente' }, { status: 409 })
+      const proposerOnA = teamA.includes(match.dateProposedById)
+      const iCanRespond = proposerOnA ? onB : onA
+      if (!iCanRespond) return NextResponse.json({ message: 'Aguarde o adversário responder à proposta' }, { status: 403 })
+      const updated = await prisma.match.update({
+        where: { id },
+        data: {
+          scheduledAt: match.proposedScheduledAt,
+          courtNumber: match.proposedCourtNumber,
+          proposedScheduledAt: null,
+          proposedCourtNumber: null,
+          dateProposedById: null,
+        },
+      })
+      const proposerPhone = proposerOnA ? p1?.whatsapp : p2?.whatsapp
+      const proposerEmail = proposerOnA ? p1?.email : p2?.email
+      await Promise.all([
+        notifyAll([{ phone: proposerPhone, message: MSG.dateAccepted(myName, eventName) }]),
+        emailAll([{ to: proposerEmail, ...EMAIL.dateAccepted(myName, eventName) }]),
+      ])
+      return NextResponse.json(updated)
+    }
+
+    // Adversário recusa a data sugerida → volta pra "sem data combinada", quem propôs pode sugerir outra
+    case 'reject-date': {
+      if (!match.dateProposedById) return NextResponse.json({ message: 'Não há proposta de data pendente' }, { status: 409 })
+      const proposerOnA = teamA.includes(match.dateProposedById)
+      const iCanRespond = proposerOnA ? onB : onA
+      if (!iCanRespond) return NextResponse.json({ message: 'Aguarde o adversário responder à proposta' }, { status: 403 })
+      const updated = await prisma.match.update({
+        where: { id },
+        data: { proposedScheduledAt: null, proposedCourtNumber: null, dateProposedById: null },
+      })
+      const proposerPhone = proposerOnA ? p1?.whatsapp : p2?.whatsapp
+      const proposerEmail = proposerOnA ? p1?.email : p2?.email
+      await Promise.all([
+        notifyAll([{ phone: proposerPhone, message: MSG.dateRejected(myName, eventName) }]),
+        emailAll([{ to: proposerEmail, ...EMAIL.dateRejected(myName, eventName) }]),
       ])
       return NextResponse.json(updated)
     }

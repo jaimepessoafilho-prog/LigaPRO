@@ -27,8 +27,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   })
   if (!event) return NextResponse.json({ message: 'Evento não encontrado' }, { status: 404 })
 
-  // Atleta só se auto-inscreve com inscrições abertas; admin inscreve em qualquer fase ativa
-  if (!isAdminAdding && event.status !== 'OPEN') {
+  // Atleta só se auto-inscreve com inscrições abertas; admin inscreve em qualquer fase ativa —
+  // exceto em evento Ranking (Todos contra Todos) com inscrições já encerradas, pois os
+  // confrontos já foram gerados para a lista atual de confirmados.
+  const isRankingClosed = event.matchType === 'ROUND_ROBIN' && event.status !== 'OPEN'
+  if ((!isAdminAdding || isRankingClosed) && event.status !== 'OPEN') {
     return NextResponse.json({ message: 'As inscrições deste evento não estão abertas' }, { status: 409 })
   }
   if (event.status === 'CANCELLED' || event.status === 'FINISHED') {
