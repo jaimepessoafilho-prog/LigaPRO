@@ -220,25 +220,6 @@ function LoginForm() {
           </button>
         </form>
 
-        {/* Demo hint */}
-        <div
-          style={{
-            marginTop: '20px',
-            padding: '14px 16px',
-            background: 'rgba(255,255,255,.04)',
-            border: '1px solid rgba(255,255,255,.08)',
-            borderRadius: '12px',
-            fontSize: '11px',
-            color: 'rgba(255,255,255,.32)',
-            lineHeight: 2,
-            textAlign: 'left',
-          }}
-        >
-          <strong style={{ color: 'rgba(255,255,255,.6)' }}>Admin demo:</strong> jaime.pessoa.filho@gmail.com
-          <br />
-          <strong style={{ color: 'rgba(255,255,255,.6)' }}>Senha:</strong> j123456
-        </div>
-
         <div style={{ marginTop: '16px', fontSize: '12px', color: 'rgba(255,255,255,.32)' }}>
           Não tem conta?{' '}
           <Link href="/register" style={{ color: 'var(--green)', fontWeight: 600 }}>
