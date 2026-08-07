@@ -6,6 +6,7 @@ import { isAdminRole } from '@/lib/nav'
 import { Card, SectionTitle, Tag } from '@/components/ui/Card'
 import { Avatar } from '@/components/ui/Avatar'
 import { AdminMatchPanel, type AdminMatchView } from '@/components/matches/AdminMatchPanel'
+import { AthleteMatchReadOnly } from '@/components/matches/AthleteMatchReadOnly'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,7 +15,8 @@ type SetScore = { p1: number; p2: number }
 export default async function AthleteMatchesPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: athleteId } = await params
   const session = await auth()
-  if (!isAdminRole(session?.user?.role)) redirect('/atletas')
+  if (!session) redirect('/login')
+  const admin = isAdminRole(session.user.role)
 
   const athlete = await prisma.user.findUnique({
     where: { id: athleteId },
@@ -109,7 +111,7 @@ export default async function AthleteMatchesPage({ params }: { params: Promise<{
           </SectionTitle>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {pending.map((m) => (
-              <AdminMatchPanel key={m.id} match={m} />
+              admin ? <AdminMatchPanel key={m.id} match={m} /> : <AthleteMatchReadOnly key={m.id} match={m} />
             ))}
           </div>
         </div>
@@ -126,7 +128,7 @@ export default async function AthleteMatchesPage({ params }: { params: Promise<{
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {finished.map((m) => (
-              <AdminMatchPanel key={m.id} match={m} />
+              admin ? <AdminMatchPanel key={m.id} match={m} /> : <AthleteMatchReadOnly key={m.id} match={m} />
             ))}
           </div>
         )}
