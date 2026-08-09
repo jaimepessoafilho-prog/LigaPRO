@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { Prisma } from '@/generated/prisma/client'
 import { computeWinner, getWinPoints, getMatchSides, isValidSet, trimToDecided, PARTICIPATION_POINTS } from '@/lib/match-points'
+import { recomputeAllPoints } from '@/lib/ranking-recompute'
 import { notifyAll, MSG } from '@/lib/notifications'
 import { emailAll, EMAIL } from '@/lib/email'
 import { z } from 'zod'
@@ -11,7 +13,11 @@ type SetScore = { p1: number; p2: number }
 const setSchema = z.object({ p1: z.coerce.number().int().min(0), p2: z.coerce.number().int().min(0) })
 
 const actionSchema = z.object({
-  action: z.enum(['confirm-match', 'decline', 'submit-score', 'confirm-score', 'contest-score', 'propose-date', 'accept-date', 'reject-date']),
+  action: z.enum([
+    'confirm-match', 'decline', 'submit-score', 'confirm-score', 'contest-score',
+    'propose-date', 'accept-date', 'reject-date',
+    'confirm-correction', 'contest-correction',
+  ]),
   sets: z.array(setSchema).optional(),
   scheduledAt: z.string().optional().nullable(),
   courtNumber: z.coerce.number().int().positive().optional().nullable(),
@@ -253,6 +259,83 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       await Promise.all([
         notifyAll([{ phone: submitterPhone, message: MSG.scoreContested(myName, eventName) }]),
         emailAll([{ to: submitterEmail, ...EMAIL.scoreContested(myName, eventName) }]),
+      ])
+      return NextResponse.json(updated)
+    }
+
+    // Uma das partes dá ciência da correção de placar proposta pelo ADMIN.
+    // Quando os dois lados confirmarem, o placar corrigido passa a valer e o ranking recalcula.
+    case 'confirm-correction': {
+      if (!match.correctionPendingSets) {
+        return NextResponse.json({ message: 'Não há correção pendente para este jogo' }, { status: 409 })
+      }
+      const alreadyConfirmed = onA ? match.correctionConfirmedA : match.correctionConfirmedB
+      if (alreadyConfirmed) {
+        return NextResponse.json({ message: 'Seu lado já confirmou esta correção' }, { status: 409 })
+      }
+      const confirmedA = onA ? true : match.correctionConfirmedA
+      const confirmedB = onB ? true : match.correctionConfirmedB
+
+      if (confirmedA && confirmedB) {
+        const sets = match.correctionPendingSets as unknown as SetScore[]
+        const winnerId = match.correctionPendingWinnerId as string
+        const updated = await prisma.match.update({
+          where: { id },
+          data: {
+            sets,
+            winnerId,
+            isAdminScore: false,
+            resultType: null,
+            scoreEditedById: match.correctionProposedById,
+            scoreEditedAt: match.correctionProposedAt,
+            correctionPendingSets: Prisma.DbNull,
+            correctionPendingWinnerId: null,
+            correctionProposedById: null,
+            correctionProposedAt: null,
+            correctionConfirmedA: false,
+            correctionConfirmedB: false,
+            correctionContestedById: null,
+            correctionContestedAt: null,
+          },
+        })
+        await recomputeAllPoints()
+        await Promise.all([
+          notifyAll([
+            { phone: p1?.whatsapp, message: MSG.correctionApplied(sets, eventName) },
+            { phone: p2?.whatsapp, message: MSG.correctionApplied(sets, eventName) },
+          ]),
+          emailAll([
+            { to: p1?.email, ...EMAIL.correctionApplied(sets, eventName) },
+            { to: p2?.email, ...EMAIL.correctionApplied(sets, eventName) },
+          ]),
+        ])
+        return NextResponse.json(updated)
+      }
+
+      const updated = await prisma.match.update({
+        where: { id },
+        data: { correctionConfirmedA: confirmedA, correctionConfirmedB: confirmedB },
+      })
+      return NextResponse.json(updated)
+    }
+
+    // Uma das partes contesta a correção proposta pelo ADMIN — só registra e avisa o ADMIN,
+    // não desfaz nada automaticamente (o ADMIN decide: propõe de novo, cancela ou força a aplicação).
+    case 'contest-correction': {
+      if (!match.correctionPendingSets) {
+        return NextResponse.json({ message: 'Não há correção pendente para este jogo' }, { status: 409 })
+      }
+      const updated = await prisma.match.update({
+        where: { id },
+        data: { correctionContestedById: me, correctionContestedAt: new Date() },
+      })
+      const admins = await prisma.user.findMany({
+        where: { role: { in: ['ADMIN', 'SUPER_ADMIN'] } },
+        select: { whatsapp: true, email: true },
+      })
+      await Promise.all([
+        notifyAll(admins.map((a) => ({ phone: a.whatsapp, message: MSG.correctionContested(myName, eventName) }))),
+        emailAll(admins.map((a) => ({ to: a.email, ...EMAIL.correctionContested(myName, eventName) }))),
       ])
       return NextResponse.json(updated)
     }

@@ -29,6 +29,11 @@ export type MatchView = {
   proposedScheduledAt?: string | null
   proposedCourtNumber?: number | null
   dateProposedById?: string | null
+  // Correção de placar proposta pelo ADMIN, pendente de anuência das duas partes
+  correctionPendingSets?: SetScore[] | null
+  correctionConfirmedA?: boolean
+  correctionConfirmedB?: boolean
+  correctionContestedById?: string | null
 }
 
 const setInputStyle: React.CSSProperties = {
@@ -75,8 +80,13 @@ export function MatchCard({ match, meId }: { match: MatchView; meId: string }) {
           'propose-date': 'Data sugerida! Aguardando o adversário aceitar.',
           'accept-date': 'Data combinada!',
           'reject-date': 'Data recusada.',
+          'confirm-correction': 'Correção confirmada!',
+          'contest-correction': 'Correção contestada — o ADMIN foi avisado.',
         }
-        toast.show(msgs[action] ?? 'Feito!', action === 'decline' || action === 'contest-score' || action === 'reject-date' ? 'ti-flag' : 'ti-check')
+        toast.show(
+          msgs[action] ?? 'Feito!',
+          action === 'decline' || action === 'contest-score' || action === 'reject-date' || action === 'contest-correction' ? 'ti-flag' : 'ti-check',
+        )
         router.refresh()
       } else {
         const data = await res.json().catch(() => ({}))
@@ -306,6 +316,37 @@ export function MatchCard({ match, meId }: { match: MatchView; meId: string }) {
               <i className="ti ti-shield-star" style={{ verticalAlign: '-2px' }} /> W.O. Admin — placar inserido pelo ADMIN
             </div>
           )}
+
+          {match.correctionPendingSets && (() => {
+            const myTeamConfirmed = isProposer ? match.correctionConfirmedA : match.correctionConfirmedB
+            const iContested = match.correctionContestedById === meId
+            return (
+              <div style={{ marginTop: '10px', padding: '10px 12px', borderRadius: '10px', background: 'rgba(200,90,26,.08)', border: '1px solid rgba(200,90,26,.25)' }}>
+                <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--clay)', marginBottom: '4px' }}>
+                  <i className="ti ti-hourglass" style={{ verticalAlign: '-2px' }} /> O ADMIN propôs uma correção de placar
+                </div>
+                <div style={{ fontSize: '13px', color: 'var(--navy)', marginBottom: '8px' }}>
+                  Placar proposto: {match.correctionPendingSets.map((s, i) => (
+                    <span key={i} style={{ fontFamily: 'var(--font-display)', marginRight: '8px' }}>{s.p1}/{s.p2}</span>
+                  ))}
+                </div>
+                {myTeamConfirmed ? (
+                  <span className="badge-pend">Você já confirmou — aguardando o outro lado</span>
+                ) : iContested ? (
+                  <span className="badge-pend">Você contestou — aguardando análise do ADMIN</span>
+                ) : (
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    <button className="btn btn-green btn-sm" disabled={isPending} onClick={() => act('confirm-correction')}>
+                      <i className="ti ti-check" /> Confirmar
+                    </button>
+                    <button className="btn btn-outline btn-sm" disabled={isPending} onClick={() => act('contest-correction')}>
+                      <i className="ti ti-flag" /> Contestar
+                    </button>
+                  </div>
+                )}
+              </div>
+            )
+          })()}
         </div>
       )}
     </div>
