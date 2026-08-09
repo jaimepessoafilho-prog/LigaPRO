@@ -31,6 +31,8 @@ model User {
   matchesAsP4   Match[]   @relation("Player4")
   scoreEdits    Match[]   @relation("ScoreEditor")
   dateProposals Match[]   @relation("DateProposer")
+  correctionProposals Match[] @relation("MatchCorrectionProposer")
+  correctionContests  Match[] @relation("MatchCorrectionContester")
   rankingPoints RankingPoint[]
   sessions      Session[]
 
@@ -232,6 +234,17 @@ model Match {
   proposedScheduledAt DateTime?
   proposedCourtNumber Int?
   dateProposedById    String?
+  // Correção de placar do ADMIN (revisão de jogo já finalizado) pendente de anuência
+  // das duas partes: propor → confirmar/contestar. Enquanto pendente, sets/winnerId
+  // do jogo não mudam — o ranking permanece com o placar anterior.
+  correctionPendingSets     Json?
+  correctionPendingWinnerId String?
+  correctionProposedById    String?
+  correctionProposedAt      DateTime?
+  correctionConfirmedA      Boolean   @default(false)
+  correctionConfirmedB      Boolean   @default(false)
+  correctionContestedById   String?
+  correctionContestedAt     DateTime?
 
   event        Event @relation(fields: [eventId], references: [id])
   draw         Draw? @relation(fields: [drawId], references: [id])
@@ -241,6 +254,8 @@ model Match {
   player4      User? @relation("Player4", fields: [player4Id], references: [id])
   scoreEditor  User? @relation("ScoreEditor", fields: [scoreEditedById], references: [id])
   dateProposer User? @relation("DateProposer", fields: [dateProposedById], references: [id])
+  correctionProposedBy  User? @relation("MatchCorrectionProposer", fields: [correctionProposedById], references: [id])
+  correctionContestedBy User? @relation("MatchCorrectionContester", fields: [correctionContestedById], references: [id])
 
   @@map("matches")
 }

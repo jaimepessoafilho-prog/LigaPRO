@@ -96,4 +96,18 @@ export const MSG = {
 
   dateRejected: (byName: string, eventName: string) =>
     `${HEAD}\n\n*${byName}* recusou a data sugerida para o jogo em *${eventName}*. Sugira outra no app.`,
+
+  correctionProposed: (
+    adminName: string,
+    oldSets: Array<{ p1: number; p2: number }>,
+    newSets: Array<{ p1: number; p2: number }>,
+    eventName: string,
+  ) =>
+    `${HEAD}\n\n⚠️ *${adminName}* (ADMIN) propôs uma correção no placar do seu jogo em *${eventName}*.\n\nPlacar atual: *${fmtSets(oldSets)}*\nPlacar proposto: *${fmtSets(newSets)}*\n\nAbra o app para *confirmar* ou *contestar* a correção.`,
+
+  correctionApplied: (sets: Array<{ p1: number; p2: number }>, eventName: string) =>
+    `${HEAD}\n\n✅ A correção de placar em *${eventName}* foi confirmada pelas duas partes.\n\nNovo placar: *${fmtSets(sets)}*. O ranking já foi atualizado.`,
+
+  correctionContested: (byName: string, eventName: string) =>
+    `${HEAD}\n\n🚩 *${byName}* contestou uma correção de placar proposta em *${eventName}*. Revise no app.`,
 }

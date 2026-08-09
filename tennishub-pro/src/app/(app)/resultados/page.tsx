@@ -68,6 +68,10 @@ export default async function ResultadosPage() {
     proposedScheduledAt: m.proposedScheduledAt ? m.proposedScheduledAt.toISOString() : null,
     proposedCourtNumber: m.proposedCourtNumber,
     dateProposedById: m.dateProposedById,
+    correctionPendingSets: (m.correctionPendingSets as unknown as SetScore[] | null) ?? null,
+    correctionConfirmedA: m.correctionConfirmedA,
+    correctionConfirmedB: m.correctionConfirmedB,
+    correctionContestedById: m.correctionContestedById,
   }))
 
   // Adversários já enfrentados por evento (time-aware)
@@ -135,6 +139,11 @@ export default async function ResultadosPage() {
   )
   const finished = views.filter((m) => m.status === 'FINISHED')
   const hasWoAdmin = finished.some((m) => m.isAdminScore)
+  const correctionsToConfirm = finished.filter((m) => {
+    if (!m.correctionPendingSets) return false
+    const { onA } = teamInfo(m)
+    return onA ? !m.correctionConfirmedA : !m.correctionConfirmedB
+  })
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -172,6 +181,7 @@ export default async function ResultadosPage() {
 
       <Group title="Convites para confirmar" icon="ti-bell" items={invitesToConfirm} me={me} />
       <Group title="Placares para confirmar" icon="ti-checkbox" items={scoreToConfirm} me={me} />
+      <Group title="Correções de placar para confirmar" icon="ti-hourglass" items={correctionsToConfirm} me={me} />
       <Group title="Jogos a disputar" icon="ti-play-card" items={toPlay} me={me} />
       <Group title="Aguardando o adversário" icon="ti-clock" items={awaiting} me={me} />
 

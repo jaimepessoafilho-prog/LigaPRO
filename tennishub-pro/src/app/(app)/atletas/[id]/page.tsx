@@ -36,6 +36,8 @@ export default async function AthleteMatchesPage({ params }: { params: Promise<{
       player3: { select: { name: true } },
       player4: { select: { name: true } },
       event: { select: { id: true, name: true, finishedAt: true } },
+      correctionProposedBy: { select: { name: true } },
+      correctionContestedBy: { select: { name: true } },
     },
   })
 
@@ -82,6 +84,11 @@ export default async function AthleteMatchesPage({ params }: { params: Promise<{
       suggestedWinnerId,
       matchesPlayedA: countA,
       matchesPlayedB: countB,
+      correctionPendingSets: (m.correctionPendingSets as unknown as SetScore[] | null) ?? null,
+      correctionConfirmedA: m.correctionConfirmedA,
+      correctionConfirmedB: m.correctionConfirmedB,
+      correctionProposedByName: m.correctionProposedBy?.name ?? null,
+      correctionContestedByName: m.correctionContestedBy?.name ?? null,
     }
   })
 

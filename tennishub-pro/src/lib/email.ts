@@ -95,4 +95,27 @@ export const EMAIL = {
     subject: `Data recusada — ${eventName}`,
     html: layout('Data recusada', `<strong>${byName}</strong> recusou a data sugerida para o jogo em <strong>${eventName}</strong>. Sugira outra no app.`),
   }),
+  correctionProposed: (
+    adminName: string,
+    oldSets: Array<{ p1: number; p2: number }>,
+    newSets: Array<{ p1: number; p2: number }>,
+    eventName: string,
+  ) => ({
+    subject: `Correção de placar proposta — ${eventName}`,
+    html: layout(
+      'Correção de placar — confirme ou conteste',
+      `<strong>${adminName}</strong> (ADMIN) propôs uma correção no placar do seu jogo em <strong>${eventName}</strong>.<br><br>Placar atual: <strong>${fmtSets(oldSets)}</strong><br>Placar proposto: <strong>${fmtSets(newSets)}</strong><br><br>Abra o app para <strong>confirmar</strong> ou <strong>contestar</strong> a correção.`,
+    ),
+  }),
+  correctionApplied: (sets: Array<{ p1: number; p2: number }>, eventName: string) => ({
+    subject: `Correção de placar confirmada — ${eventName}`,
+    html: layout(
+      'Correção de placar confirmada',
+      `A correção de placar em <strong>${eventName}</strong> foi confirmada pelas duas partes.<br><br>Novo placar: <strong>${fmtSets(sets)}</strong>. O ranking já foi atualizado.`,
+    ),
+  }),
+  correctionContested: (byName: string, eventName: string) => ({
+    subject: `Correção de placar contestada — ${eventName}`,
+    html: layout('Correção de placar contestada', `<strong>${byName}</strong> contestou uma correção de placar proposta em <strong>${eventName}</strong>. Revise no app.`),
+  }),
 }
