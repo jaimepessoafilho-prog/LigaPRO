@@ -3,7 +3,7 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@/generated/prisma/client'
 import { isAdminRole } from '@/lib/nav'
-import { computeWinner, isValidSet, trimToDecided } from '@/lib/match-points'
+import { computeWinner, isValidSet, trimToDecided, RESULT_TYPE_WO_ADMIN, RESULT_TYPE_RATIFIED } from '@/lib/match-points'
 import { recomputeAllPoints } from '@/lib/ranking-recompute'
 import { notifyAll, MSG } from '@/lib/notifications'
 import { emailAll, EMAIL } from '@/lib/email'
@@ -161,7 +161,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       data: {
         status: 'FINISHED',
         isAdminScore: false,
-        resultType: 'Homologado Admin',
+        resultType: RESULT_TYPE_RATIFIED,
         scoreEditedById: session.user.id,
         scoreEditedAt: new Date(),
       },
@@ -185,6 +185,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (match.status === 'FINISHED') {
     return NextResponse.json({ message: 'Jogo já tem placar — use a correção de placar' }, { status: 409 })
   }
+  if (match.status === 'PENDING_SCORE') {
+    // Um atleta já lançou um placar real. Não sobrescrever com 6/0 6/0 — o caminho é
+    // homologar (ratify-score) ou o adversário contestar antes.
+    return NextResponse.json(
+      { message: 'Este jogo tem placar lançado por um atleta — use "Homologar placar" para oficializá-lo' },
+      { status: 409 },
+    )
+  }
   const teamA = [match.player1Id, match.player3Id].filter(Boolean) as string[]
   const teamB = [match.player2Id, match.player4Id].filter(Boolean) as string[]
   if (!teamA.includes(body.winnerId) && !teamB.includes(body.winnerId)) {
@@ -204,7 +212,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       winnerId,
       status: 'FINISHED',
       isAdminScore: true,
-      resultType: 'W.O. Admin',
+      resultType: RESULT_TYPE_WO_ADMIN,
       scoreEditedById: session.user.id,
       scoreEditedAt: new Date(),
     },

@@ -1,5 +1,6 @@
 import { Avatar } from '@/components/ui/Avatar'
 import type { AdminMatchView } from '@/components/matches/AdminMatchPanel'
+import { RESULT_TYPE_RATIFIED } from '@/lib/match-points'
 
 /** Mesmo card do painel do admin, mas sem nenhuma ação — só consulta, pra qualquer atleta ver o resultado dos outros. */
 export function AthleteMatchReadOnly({ match }: { match: AdminMatchView }) {
@@ -43,7 +44,7 @@ export function AthleteMatchReadOnly({ match }: { match: AdminMatchView }) {
               <i className="ti ti-shield-star" style={{ verticalAlign: '-2px' }} /> W.O. Admin — placar inserido pelo ADMIN
             </div>
           )}
-          {match.resultType === 'Homologado Admin' && (
+          {match.resultType === RESULT_TYPE_RATIFIED && (
             <div style={{ marginTop: '8px', fontSize: '11px', color: 'var(--green-d)', fontWeight: 600 }}>
               <i className="ti ti-clipboard-check" style={{ verticalAlign: '-2px' }} /> Placar homologado pelo ADMIN
             </div>

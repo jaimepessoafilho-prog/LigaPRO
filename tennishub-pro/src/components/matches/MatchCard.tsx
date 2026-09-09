@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { useToast } from '@/components/ui/Toast'
 import { Avatar } from '@/components/ui/Avatar'
+import { RESULT_TYPE_RATIFIED } from '@/lib/match-points'
 
 type SetScore = { p1: number; p2: number }
 type Player = { id: string; name: string; avatarUrl?: string | null } | null
@@ -317,7 +318,7 @@ export function MatchCard({ match, meId }: { match: MatchView; meId: string }) {
               <i className="ti ti-shield-star" style={{ verticalAlign: '-2px' }} /> W.O. Admin — placar inserido pelo ADMIN
             </div>
           )}
-          {match.resultType === 'Homologado Admin' && (
+          {match.resultType === RESULT_TYPE_RATIFIED && (
             <div style={{ marginTop: '8px', fontSize: '11px', color: 'var(--green-d)', fontWeight: 600 }}>
               <i className="ti ti-clipboard-check" style={{ verticalAlign: '-2px' }} /> Placar homologado pelo ADMIN
             </div>
