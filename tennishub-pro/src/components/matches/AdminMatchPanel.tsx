@@ -24,6 +24,8 @@ export type AdminMatchView = {
   winnerId: string | null
   isAdminScore: boolean
   resultType: string | null
+  // Placar lançado por um atleta e ainda sem confirmação do adversário (status PENDING_SCORE)
+  scoreSubmittedByName: string | null
   suggestedWinnerId: string | null
   matchesPlayedA: number
   matchesPlayedB: number
@@ -119,6 +121,24 @@ export function AdminMatchPanel({ match }: { match: AdminMatchView }) {
     })
   }
 
+  function ratifyScore() {
+    if (!window.confirm('Homologar o placar lançado? O jogo passa a contar como realizado e o ranking é recalculado.')) return
+    startTransition(async () => {
+      const res = await fetch(`/api/matches/${match.id}/admin`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'ratify-score' }),
+      })
+      if (res.ok) {
+        toast.show('Placar homologado! Ranking recalculado.', 'ti-check')
+        router.refresh()
+      } else {
+        const data = await res.json().catch(() => ({}))
+        toast.show(data.message ?? 'Erro ao homologar placar', 'ti-alert-triangle')
+      }
+    })
+  }
+
   function declareWO(winnerId: string, winnerName: string) {
     if (!window.confirm(`Fechar este jogo como W.O. Admin (6/0 6/0) para ${winnerName}?`)) return
     startTransition(async () => {
@@ -172,6 +192,11 @@ export function AdminMatchPanel({ match }: { match: AdminMatchView }) {
           {match.isAdminScore && (
             <div style={{ marginTop: '8px', fontSize: '11px', color: 'var(--clay)', fontWeight: 600 }}>
               <i className="ti ti-shield-star" style={{ verticalAlign: '-2px' }} /> W.O. Admin — placar inserido pelo ADMIN
+            </div>
+          )}
+          {match.resultType === 'Homologado Admin' && (
+            <div style={{ marginTop: '8px', fontSize: '11px', color: 'var(--green-d)', fontWeight: 600 }}>
+              <i className="ti ti-clipboard-check" style={{ verticalAlign: '-2px' }} /> Placar homologado pelo ADMIN (sem confirmação do adversário)
             </div>
           )}
 
@@ -239,13 +264,36 @@ export function AdminMatchPanel({ match }: { match: AdminMatchView }) {
         </div>
       ) : (
         <div>
-          <span className="badge-pend">Aguardando realização</span>
+          <span className="badge-pend">
+            {match.status === 'PENDING_SCORE' ? 'Placar lançado — sem confirmação do adversário' : 'Aguardando realização'}
+          </span>
           {!match.player2Id ? (
             <p style={{ fontSize: '12px', color: 'var(--text3)', marginTop: '8px' }}>Confronto incompleto — sem adversário definido.</p>
           ) : locked ? (
             <p style={{ fontSize: '12px', color: 'var(--text3)', marginTop: '8px' }}>Evento encerrado.</p>
           ) : (
             <div style={{ marginTop: '10px' }}>
+              {match.status === 'PENDING_SCORE' && match.sets.length > 0 && (
+                <div style={{ marginBottom: '14px', padding: '10px 12px', borderRadius: '10px', background: 'rgba(0,196,106,.07)', border: '1px solid rgba(0,196,106,.28)' }}>
+                  <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--green-d)', marginBottom: '4px' }}>
+                    <i className="ti ti-clipboard-check" style={{ verticalAlign: '-2px' }} /> Homologar placar lançado
+                  </div>
+                  <div style={{ fontSize: '13px', color: 'var(--navy)', marginBottom: '4px' }}>
+                    Placar: {match.sets.map((s, i) => (
+                      <span key={i} style={{ fontFamily: 'var(--font-display)', marginRight: '8px' }}>{s.p1}/{s.p2}</span>
+                    ))}
+                  </div>
+                  <div style={{ fontSize: '11px', color: 'var(--text2)', marginBottom: '8px' }}>
+                    Lançado por {match.scoreSubmittedByName ?? '—'} · vencedor: {match.winnerId === match.player1Id ? p1Name : p2Name}
+                  </div>
+                  <button className="btn btn-green btn-sm" disabled={isPending} onClick={ratifyScore}>
+                    <i className="ti ti-check" /> Homologar placar
+                  </button>
+                  <p style={{ fontSize: '10px', color: 'var(--text3)', marginTop: '6px', marginBottom: 0 }}>
+                    Oficializa exatamente o placar lançado. Conta como jogo realizado.
+                  </p>
+                </div>
+              )}
               <div style={{ fontSize: '11px', color: 'var(--text3)', marginBottom: '6px' }}>
                 Fechamento administrativo (W.O. Admin — 6/0 6/0) · jogos realizados: {p1Name.split(' ')[0]} {match.matchesPlayedA} × {match.matchesPlayedB} {p2Name.split(' ')[0]}
               </div>

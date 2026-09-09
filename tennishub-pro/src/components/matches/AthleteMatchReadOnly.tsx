@@ -43,6 +43,11 @@ export function AthleteMatchReadOnly({ match }: { match: AdminMatchView }) {
               <i className="ti ti-shield-star" style={{ verticalAlign: '-2px' }} /> W.O. Admin — placar inserido pelo ADMIN
             </div>
           )}
+          {match.resultType === 'Homologado Admin' && (
+            <div style={{ marginTop: '8px', fontSize: '11px', color: 'var(--green-d)', fontWeight: 600 }}>
+              <i className="ti ti-clipboard-check" style={{ verticalAlign: '-2px' }} /> Placar homologado pelo ADMIN
+            </div>
+          )}
           {match.correctionPendingSets && (
             <div style={{ marginTop: '8px', fontSize: '11px', color: 'var(--clay)', fontWeight: 600 }}>
               <i className="ti ti-hourglass" style={{ verticalAlign: '-2px' }} /> Correção do placar em análise — aguardando ciência dos jogadores

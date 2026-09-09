@@ -17,13 +17,16 @@ const bodySchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('propose-correction'), sets: z.array(setSchema).min(1) }),
   z.object({ action: z.literal('force-apply-correction') }),
   z.object({ action: z.literal('cancel-correction') }),
+  z.object({ action: z.literal('ratify-score') }),
   z.object({ action: z.literal('wo-admin'), winnerId: z.string().min(1) }),
 ])
 
 // Fechamento administrativo de placar (RF-03/RF-04): correção de jogo já realizado
 // (agora como PROPOSTA, pendente de anuência das duas partes — ver confirm-correction/
-// contest-correction em [id]/route.ts) ou W.O. Admin (6/0 6/0) para jogo que não
-// aconteceu, que continua instantâneo. Admin-only.
+// contest-correction em [id]/route.ts); homologação de placar lançado por um atleta e
+// nunca confirmado pelo adversário (ratify-score — instantâneo, conta como jogo
+// realizado); ou W.O. Admin (6/0 6/0) para jogo que não aconteceu, também instantâneo.
+// Admin-only.
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
   if (!session || !isAdminRole(session.user.role)) {
@@ -137,6 +140,42 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       emailAll([
         { to: p1?.email, ...EMAIL.correctionApplied(sets, eventName) },
         { to: p2?.email, ...EMAIL.correctionApplied(sets, eventName) },
+      ]),
+    ])
+    return NextResponse.json(updated)
+  }
+
+  // ratify-score: homologação do placar que um atleta lançou e o adversário nunca
+  // confirmou. O placar (sets/winnerId) já está gravado desde o submit-score — o admin
+  // apenas o oficializa. Conta como jogo realizado (isAdminScore = false).
+  if (body.action === 'ratify-score') {
+    if (match.status !== 'PENDING_SCORE') {
+      return NextResponse.json({ message: 'Este jogo não tem placar lançado aguardando confirmação' }, { status: 409 })
+    }
+    const sets = (match.sets as unknown as SetScore[]) ?? []
+    if (sets.length === 0 || !match.winnerId) {
+      return NextResponse.json({ message: 'O placar lançado está incompleto' }, { status: 400 })
+    }
+    const updated = await prisma.match.update({
+      where: { id },
+      data: {
+        status: 'FINISHED',
+        isAdminScore: false,
+        resultType: 'Homologado Admin',
+        scoreEditedById: session.user.id,
+        scoreEditedAt: new Date(),
+      },
+    })
+    await recomputeAllPoints()
+    const winnerName = (match.winnerId === match.player1Id ? p1?.name : p2?.name) ?? 'Vencedor'
+    await Promise.all([
+      notifyAll([
+        { phone: p1?.whatsapp, message: MSG.scoreRatified(adminName, winnerName, sets, eventName) },
+        { phone: p2?.whatsapp, message: MSG.scoreRatified(adminName, winnerName, sets, eventName) },
+      ]),
+      emailAll([
+        { to: p1?.email, ...EMAIL.scoreRatified(adminName, winnerName, sets, eventName) },
+        { to: p2?.email, ...EMAIL.scoreRatified(adminName, winnerName, sets, eventName) },
       ]),
     ])
     return NextResponse.json(updated)
