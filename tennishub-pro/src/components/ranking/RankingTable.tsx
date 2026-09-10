@@ -54,7 +54,8 @@ export function RankingTable({
             <th>#</th>
             <th className="name-th">Atleta</th>
             <th>Pts</th>
-            <th>Vit.</th>
+            <th title="Vitórias (não conta W.O. Admin)">V</th>
+            <th title="Derrotas (não conta W.O. Admin)">D</th>
             <th>Jogos</th>
             <th title="Saldo de sets">S.Sets</th>
             <th title="Saldo de games">S.Games</th>
@@ -90,6 +91,7 @@ export function RankingTable({
                   <span className="pts-big">{e.totalPoints}</span>
                 </td>
                 <td>{e.wins}</td>
+                <td>{e.losses}</td>
                 <td>{e.matches}</td>
                 <td className={e.setDiff > 0 ? 'ss-pos' : e.setDiff < 0 ? 'ss-neg' : ''}>
                   {e.setDiff > 0 ? `+${e.setDiff}` : e.setDiff}

@@ -33,8 +33,8 @@ export default async function AthleteMatchesPage({ params }: { params: Promise<{
     include: {
       player1: { select: { id: true, name: true, avatarUrl: true } },
       player2: { select: { id: true, name: true, avatarUrl: true } },
-      player3: { select: { name: true } },
-      player4: { select: { name: true } },
+      player3: { select: { id: true, name: true } },
+      player4: { select: { id: true, name: true } },
       event: { select: { id: true, name: true, finishedAt: true } },
       correctionProposedBy: { select: { name: true } },
       correctionContestedBy: { select: { name: true } },
@@ -81,6 +81,8 @@ export default async function AthleteMatchesPage({ params }: { params: Promise<{
       winnerId: m.winnerId,
       isAdminScore: m.isAdminScore,
       resultType: m.resultType,
+      scoreSubmittedByName:
+        [m.player1, m.player2, m.player3, m.player4].find((p) => p?.id === m.scoreSubmittedById)?.name ?? null,
       suggestedWinnerId,
       matchesPlayedA: countA,
       matchesPlayedB: countB,

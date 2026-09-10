@@ -1,5 +1,6 @@
 import { Avatar } from '@/components/ui/Avatar'
 import type { AdminMatchView } from '@/components/matches/AdminMatchPanel'
+import { RESULT_TYPE_RATIFIED } from '@/lib/match-points'
 
 /** Mesmo card do painel do admin, mas sem nenhuma ação — só consulta, pra qualquer atleta ver o resultado dos outros. */
 export function AthleteMatchReadOnly({ match }: { match: AdminMatchView }) {
@@ -35,12 +36,23 @@ export function AthleteMatchReadOnly({ match }: { match: AdminMatchView }) {
               )
             })}
           </div>
-          <span className="badge-ok">
-            <i className="ti ti-trophy" style={{ verticalAlign: '-2px' }} /> Vencedor: {match.winnerId === match.player1Id ? p1Name : p2Name}
-          </span>
-          {match.isAdminScore && (
+          {match.winnerId ? (
+            <span className="badge-ok">
+              <i className="ti ti-trophy" style={{ verticalAlign: '-2px' }} /> Vencedor: {match.winnerId === match.player1Id ? p1Name : p2Name}
+            </span>
+          ) : (
+            <span className="badge-pend">
+              <i className="ti ti-equal" style={{ verticalAlign: '-2px' }} /> W.O. Admin — empate técnico (sem pontos)
+            </span>
+          )}
+          {match.isAdminScore && match.winnerId && (
             <div style={{ marginTop: '8px', fontSize: '11px', color: 'var(--clay)', fontWeight: 600 }}>
-              <i className="ti ti-shield-star" style={{ verticalAlign: '-2px' }} /> W.O. Admin — placar inserido pelo ADMIN
+              <i className="ti ti-shield-star" style={{ verticalAlign: '-2px' }} /> W.O. Admin — 3 pts ao vencedor, não conta como partida
+            </div>
+          )}
+          {match.resultType === RESULT_TYPE_RATIFIED && (
+            <div style={{ marginTop: '8px', fontSize: '11px', color: 'var(--green-d)', fontWeight: 600 }}>
+              <i className="ti ti-clipboard-check" style={{ verticalAlign: '-2px' }} /> Placar homologado pelo ADMIN
             </div>
           )}
           {match.correctionPendingSets && (

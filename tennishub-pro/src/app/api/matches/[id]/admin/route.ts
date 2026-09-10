@@ -3,7 +3,7 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@/generated/prisma/client'
 import { isAdminRole } from '@/lib/nav'
-import { computeWinner, isValidSet, trimToDecided } from '@/lib/match-points'
+import { computeWinner, isValidSet, trimToDecided, RESULT_TYPE_WO_ADMIN, RESULT_TYPE_WO_ADMIN_DRAW, RESULT_TYPE_RATIFIED } from '@/lib/match-points'
 import { recomputeAllPoints } from '@/lib/ranking-recompute'
 import { notifyAll, MSG } from '@/lib/notifications'
 import { emailAll, EMAIL } from '@/lib/email'
@@ -17,13 +17,17 @@ const bodySchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('propose-correction'), sets: z.array(setSchema).min(1) }),
   z.object({ action: z.literal('force-apply-correction') }),
   z.object({ action: z.literal('cancel-correction') }),
-  z.object({ action: z.literal('wo-admin'), winnerId: z.string().min(1) }),
+  z.object({ action: z.literal('ratify-score') }),
+  // winnerId ausente = empate técnico (mesmo nº de partidas realizadas): W.O. sem pontuação
+  z.object({ action: z.literal('wo-admin'), winnerId: z.string().min(1).optional() }),
 ])
 
 // Fechamento administrativo de placar (RF-03/RF-04): correção de jogo já realizado
 // (agora como PROPOSTA, pendente de anuência das duas partes — ver confirm-correction/
-// contest-correction em [id]/route.ts) ou W.O. Admin (6/0 6/0) para jogo que não
-// aconteceu, que continua instantâneo. Admin-only.
+// contest-correction em [id]/route.ts); homologação de placar lançado por um atleta e
+// nunca confirmado pelo adversário (ratify-score — instantâneo, conta como jogo
+// realizado); ou W.O. Admin (6/0 6/0) para jogo que não aconteceu, também instantâneo.
+// Admin-only.
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
   if (!session || !isAdminRole(session.user.role)) {
@@ -142,12 +146,76 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json(updated)
   }
 
+  // ratify-score: homologação do placar que um atleta lançou e o adversário nunca
+  // confirmou. O placar (sets/winnerId) já está gravado desde o submit-score — o admin
+  // apenas o oficializa. Conta como jogo realizado (isAdminScore = false).
+  if (body.action === 'ratify-score') {
+    if (match.status !== 'PENDING_SCORE') {
+      return NextResponse.json({ message: 'Este jogo não tem placar lançado aguardando confirmação' }, { status: 409 })
+    }
+    const sets = (match.sets as unknown as SetScore[]) ?? []
+    if (sets.length === 0 || !match.winnerId) {
+      return NextResponse.json({ message: 'O placar lançado está incompleto' }, { status: 400 })
+    }
+    const updated = await prisma.match.update({
+      where: { id },
+      data: {
+        status: 'FINISHED',
+        isAdminScore: false,
+        resultType: RESULT_TYPE_RATIFIED,
+        scoreEditedById: session.user.id,
+        scoreEditedAt: new Date(),
+      },
+    })
+    await recomputeAllPoints()
+    const winnerName = (match.winnerId === match.player1Id ? p1?.name : p2?.name) ?? 'Vencedor'
+    await Promise.all([
+      notifyAll([
+        { phone: p1?.whatsapp, message: MSG.scoreRatified(adminName, winnerName, sets, eventName) },
+        { phone: p2?.whatsapp, message: MSG.scoreRatified(adminName, winnerName, sets, eventName) },
+      ]),
+      emailAll([
+        { to: p1?.email, ...EMAIL.scoreRatified(adminName, winnerName, sets, eventName) },
+        { to: p2?.email, ...EMAIL.scoreRatified(adminName, winnerName, sets, eventName) },
+      ]),
+    ])
+    return NextResponse.json(updated)
+  }
+
   // wo-admin: fechamento instantâneo, sem anuência (jogo não realizado)
   if (match.status === 'FINISHED') {
     return NextResponse.json({ message: 'Jogo já tem placar — use a correção de placar' }, { status: 409 })
   }
+  if (match.status === 'PENDING_SCORE') {
+    // Um atleta já lançou um placar real. Não sobrescrever com 6/0 6/0 — o caminho é
+    // homologar (ratify-score) ou o adversário contestar antes.
+    return NextResponse.json(
+      { message: 'Este jogo tem placar lançado por um atleta — use "Homologar placar" para oficializá-lo' },
+      { status: 409 },
+    )
+  }
   const teamA = [match.player1Id, match.player3Id].filter(Boolean) as string[]
   const teamB = [match.player2Id, match.player4Id].filter(Boolean) as string[]
+
+  // Empate técnico (sem winnerId): W.O. não pontua ninguém. winnerId nulo já faz o
+  // computeExpectedPoints ignorar o jogo, e isAdminScore mantém fora de vitórias/jogos.
+  if (!body.winnerId) {
+    const updated = await prisma.match.update({
+      where: { id },
+      data: {
+        sets: [],
+        winnerId: null,
+        status: 'FINISHED',
+        isAdminScore: true,
+        resultType: RESULT_TYPE_WO_ADMIN_DRAW,
+        scoreEditedById: session.user.id,
+        scoreEditedAt: new Date(),
+      },
+    })
+    await recomputeAllPoints()
+    return NextResponse.json(updated)
+  }
+
   if (!teamA.includes(body.winnerId) && !teamB.includes(body.winnerId)) {
     return NextResponse.json({ message: 'Vencedor não participa desta partida' }, { status: 400 })
   }
@@ -165,7 +233,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       winnerId,
       status: 'FINISHED',
       isAdminScore: true,
-      resultType: 'W.O. Admin',
+      resultType: RESULT_TYPE_WO_ADMIN,
       scoreEditedById: session.user.id,
       scoreEditedAt: new Date(),
     },

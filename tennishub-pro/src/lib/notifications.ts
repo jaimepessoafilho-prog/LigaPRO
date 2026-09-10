@@ -80,6 +80,14 @@ export const MSG = {
   scoreContested: (byName: string, eventName: string) =>
     `${HEAD}\n\n*${byName}* contestou o placar do jogo em *${eventName}*. Lance o placar novamente no app.`,
 
+  scoreRatified: (
+    adminName: string,
+    winnerName: string,
+    sets: Array<{ p1: number; p2: number }>,
+    eventName: string,
+  ) =>
+    `${HEAD}\n\n✅ *${adminName}* (ADMIN) homologou o placar do jogo em *${eventName}* que estava sem a confirmação do adversário.\n\n🏆 Vencedor: *${winnerName}*\nPlacar: *${fmtSets(sets)}*\n\nO jogo passa a contar como realizado e o ranking já foi atualizado.`,
+
   resultConfirmed: (
     winnerName: string,
     sets: Array<{ p1: number; p2: number }>,

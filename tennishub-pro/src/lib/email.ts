@@ -76,6 +76,18 @@ export const EMAIL = {
     subject: `Placar contestado — ${eventName}`,
     html: layout('Placar contestado', `<strong>${byName}</strong> contestou o placar do jogo em <strong>${eventName}</strong>. Lance o placar novamente no app.`),
   }),
+  scoreRatified: (
+    adminName: string,
+    winnerName: string,
+    sets: Array<{ p1: number; p2: number }>,
+    eventName: string,
+  ) => ({
+    subject: `Placar homologado pelo ADMIN — ${eventName}`,
+    html: layout(
+      'Placar homologado pelo ADMIN',
+      `<strong>${adminName}</strong> (ADMIN) homologou o placar do jogo em <strong>${eventName}</strong> que estava sem a confirmação do adversário.<br><br>🏆 Vencedor: <strong>${winnerName}</strong><br>Placar: <strong>${fmtSets(sets)}</strong><br><br>O jogo passa a contar como realizado e o ranking já foi atualizado.`,
+    ),
+  }),
   resultConfirmed: (winnerName: string, sets: Array<{ p1: number; p2: number }>, points: number, eventName: string) => ({
     subject: `Resultado confirmado — ${eventName}`,
     html: layout(

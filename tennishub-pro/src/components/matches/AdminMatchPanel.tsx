@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { useToast } from '@/components/ui/Toast'
 import { Avatar } from '@/components/ui/Avatar'
+import { RESULT_TYPE_RATIFIED } from '@/lib/match-points'
 
 type SetScore = { p1: number; p2: number }
 type Player = { id: string; name: string; avatarUrl?: string | null } | null
@@ -24,6 +25,8 @@ export type AdminMatchView = {
   winnerId: string | null
   isAdminScore: boolean
   resultType: string | null
+  // Placar lançado por um atleta e ainda sem confirmação do adversário (status PENDING_SCORE)
+  scoreSubmittedByName: string | null
   suggestedWinnerId: string | null
   matchesPlayedA: number
   matchesPlayedB: number
@@ -119,13 +122,34 @@ export function AdminMatchPanel({ match }: { match: AdminMatchView }) {
     })
   }
 
-  function declareWO(winnerId: string, winnerName: string) {
-    if (!window.confirm(`Fechar este jogo como W.O. Admin (6/0 6/0) para ${winnerName}?`)) return
+  function ratifyScore() {
+    if (!window.confirm('Homologar o placar lançado? O jogo passa a contar como realizado e o ranking é recalculado.')) return
     startTransition(async () => {
       const res = await fetch(`/api/matches/${match.id}/admin`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'wo-admin', winnerId }),
+        body: JSON.stringify({ action: 'ratify-score' }),
+      })
+      if (res.ok) {
+        toast.show('Placar homologado! Ranking recalculado.', 'ti-check')
+        router.refresh()
+      } else {
+        const data = await res.json().catch(() => ({}))
+        toast.show(data.message ?? 'Erro ao homologar placar', 'ti-alert-triangle')
+      }
+    })
+  }
+
+  function declareWO(winnerId: string | null, winnerName?: string) {
+    const msg = winnerId
+      ? `Fechar como W.O. Admin com ${winnerName} vencedor (3 pts)? O jogo NÃO conta como partida disputada.`
+      : `Fechar como W.O. Admin sem pontuação (empate técnico — 0 pts para os dois)?`
+    if (!window.confirm(msg)) return
+    startTransition(async () => {
+      const res = await fetch(`/api/matches/${match.id}/admin`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(winnerId ? { action: 'wo-admin', winnerId } : { action: 'wo-admin' }),
       })
       if (res.ok) {
         toast.show('Jogo fechado como W.O. Admin! Ranking recalculado.', 'ti-flag')
@@ -166,12 +190,23 @@ export function AdminMatchPanel({ match }: { match: AdminMatchView }) {
               )
             })}
           </div>
-          <span className="badge-ok">
-            <i className="ti ti-trophy" style={{ verticalAlign: '-2px' }} /> Vencedor: {match.winnerId === match.player1Id ? p1Name : p2Name}
-          </span>
-          {match.isAdminScore && (
+          {match.winnerId ? (
+            <span className="badge-ok">
+              <i className="ti ti-trophy" style={{ verticalAlign: '-2px' }} /> Vencedor: {match.winnerId === match.player1Id ? p1Name : p2Name}
+            </span>
+          ) : (
+            <span className="badge-pend">
+              <i className="ti ti-equal" style={{ verticalAlign: '-2px' }} /> W.O. Admin — empate técnico (sem pontos)
+            </span>
+          )}
+          {match.isAdminScore && match.winnerId && (
             <div style={{ marginTop: '8px', fontSize: '11px', color: 'var(--clay)', fontWeight: 600 }}>
-              <i className="ti ti-shield-star" style={{ verticalAlign: '-2px' }} /> W.O. Admin — placar inserido pelo ADMIN
+              <i className="ti ti-shield-star" style={{ verticalAlign: '-2px' }} /> W.O. Admin — vencedor por ter mais partidas realizadas (3 pts, sem contar como jogo)
+            </div>
+          )}
+          {match.resultType === RESULT_TYPE_RATIFIED && (
+            <div style={{ marginTop: '8px', fontSize: '11px', color: 'var(--green-d)', fontWeight: 600 }}>
+              <i className="ti ti-clipboard-check" style={{ verticalAlign: '-2px' }} /> Placar homologado pelo ADMIN (sem confirmação do adversário)
             </div>
           )}
 
@@ -239,32 +274,63 @@ export function AdminMatchPanel({ match }: { match: AdminMatchView }) {
         </div>
       ) : (
         <div>
-          <span className="badge-pend">Aguardando realização</span>
+          <span className="badge-pend">
+            {match.status === 'PENDING_SCORE' ? 'Placar lançado — sem confirmação do adversário' : 'Aguardando realização'}
+          </span>
           {!match.player2Id ? (
             <p style={{ fontSize: '12px', color: 'var(--text3)', marginTop: '8px' }}>Confronto incompleto — sem adversário definido.</p>
           ) : locked ? (
             <p style={{ fontSize: '12px', color: 'var(--text3)', marginTop: '8px' }}>Evento encerrado.</p>
           ) : (
             <div style={{ marginTop: '10px' }}>
-              <div style={{ fontSize: '11px', color: 'var(--text3)', marginBottom: '6px' }}>
-                Fechamento administrativo (W.O. Admin — 6/0 6/0) · jogos realizados: {p1Name.split(' ')[0]} {match.matchesPlayedA} × {match.matchesPlayedB} {p2Name.split(' ')[0]}
-              </div>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                <button
-                  className={`btn btn-sm ${match.suggestedWinnerId === match.player1Id ? 'btn-green' : 'btn-outline'}`}
-                  disabled={isPending}
-                  onClick={() => declareWO(match.player1Id, p1Name)}
-                >
-                  <i className="ti ti-trophy" /> {p1Name} {match.suggestedWinnerId === match.player1Id && '(sugerido)'}
-                </button>
-                <button
-                  className={`btn btn-sm ${match.suggestedWinnerId === match.player2Id ? 'btn-green' : 'btn-outline'}`}
-                  disabled={isPending}
-                  onClick={() => declareWO(match.player2Id as string, p2Name)}
-                >
-                  <i className="ti ti-trophy" /> {p2Name} {match.suggestedWinnerId === match.player2Id && '(sugerido)'}
-                </button>
-              </div>
+              {match.status === 'PENDING_SCORE' ? (
+                match.sets.length > 0 ? (
+                  <div style={{ padding: '10px 12px', borderRadius: '10px', background: 'rgba(0,196,106,.07)', border: '1px solid rgba(0,196,106,.28)' }}>
+                    <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--green-d)', marginBottom: '4px' }}>
+                      <i className="ti ti-clipboard-check" style={{ verticalAlign: '-2px' }} /> Homologar placar lançado
+                    </div>
+                    <div style={{ fontSize: '13px', color: 'var(--navy)', marginBottom: '4px' }}>
+                      Placar: {match.sets.map((s, i) => (
+                        <span key={i} style={{ fontFamily: 'var(--font-display)', marginRight: '8px' }}>{s.p1}/{s.p2}</span>
+                      ))}
+                    </div>
+                    <div style={{ fontSize: '11px', color: 'var(--text2)', marginBottom: '8px' }}>
+                      Lançado por {match.scoreSubmittedByName ?? '—'} · vencedor: {match.winnerId === match.player1Id ? p1Name : p2Name}
+                    </div>
+                    <button className="btn btn-green btn-sm" disabled={isPending} onClick={ratifyScore}>
+                      <i className="ti ti-check" /> Homologar placar
+                    </button>
+                    <p style={{ fontSize: '10px', color: 'var(--text3)', marginTop: '6px', marginBottom: 0 }}>
+                      Oficializa exatamente o placar lançado. Conta como jogo realizado.
+                    </p>
+                  </div>
+                ) : (
+                  <p style={{ fontSize: '12px', color: 'var(--text3)' }}>Placar lançado incompleto — peça ao atleta para relançar.</p>
+                )
+              ) : (() => {
+                const tie = match.matchesPlayedA === match.matchesPlayedB
+                const woWinnerId = match.matchesPlayedA > match.matchesPlayedB ? match.player1Id : match.player2Id
+                const woWinnerName = match.matchesPlayedA > match.matchesPlayedB ? p1Name : p2Name
+                return (
+                  <>
+                    <div style={{ fontSize: '11px', color: 'var(--text3)', marginBottom: '6px' }}>
+                      W.O. Admin · partidas realizadas: {p1Name.split(' ')[0]} {match.matchesPlayedA} × {match.matchesPlayedB} {p2Name.split(' ')[0]}
+                      {' '}(não conta W.O.). {tie
+                        ? 'Empate — ninguém pontua.'
+                        : `Vence quem tem mais partidas: ${woWinnerName} (3 pts).`}
+                    </div>
+                    {tie ? (
+                      <button className="btn btn-outline btn-sm" disabled={isPending} onClick={() => declareWO(null)}>
+                        <i className="ti ti-equal" /> Fechar W.O. — empate técnico (0 pts)
+                      </button>
+                    ) : (
+                      <button className="btn btn-green btn-sm" disabled={isPending} onClick={() => declareWO(woWinnerId, woWinnerName)}>
+                        <i className="ti ti-trophy" /> Fechar W.O. — {woWinnerName} vence (3 pts)
+                      </button>
+                    )}
+                  </>
+                )
+              })()}
             </div>
           )}
         </div>

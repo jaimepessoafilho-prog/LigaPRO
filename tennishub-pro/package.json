@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "admin": "tsx prisma/create-admin.ts",
+    "ranking:sem-wo": "tsx prisma/ranking-sem-wo.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {

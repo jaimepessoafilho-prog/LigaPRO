@@ -7,6 +7,7 @@ export type RankingEntry = {
   avatarUrl: string | null
   totalPoints: number
   wins: number
+  losses: number
   matches: number
   eventsCount: number
   /** Critérios de desempate ATP */
@@ -52,14 +53,15 @@ export async function calculateUnifiedRanking(year?: number, eventId?: string): 
       where: { userId: { in: ids }, year: currentYear, ...(eventId ? { eventId } : {}) },
       _sum: { points: true },
     }),
+    // W.O. Admin (isAdminScore) não conta como vitória/jogo — só gera pontos (ver ranking-recompute)
     prisma.match.groupBy({
       by: ['winnerId'],
-      where: { winnerId: { in: ids }, status: 'FINISHED', ...matchScope },
+      where: { winnerId: { in: ids }, status: 'FINISHED', isAdminScore: false, ...matchScope },
       _count: { _all: true },
     }),
     prisma.match.findMany({
-      where: { status: 'FINISHED', ...matchScope, OR: [{ player1Id: { in: ids } }, { player2Id: { in: ids } }] },
-      select: { player1Id: true, player2Id: true, sets: true },
+      where: { status: 'FINISHED', isAdminScore: false, ...matchScope, OR: [{ player1Id: { in: ids } }, { player2Id: { in: ids } }] },
+      select: { player1Id: true, player2Id: true, winnerId: true, sets: true },
     }),
     prisma.eventRegistration.groupBy({
       by: ['userId'],
@@ -72,6 +74,7 @@ export async function calculateUnifiedRanking(year?: number, eventId?: string): 
   const winsMap = new Map(winsByUser.map((w) => [w.winnerId as string, w._count._all]))
   const eventsMap = new Map(regsByUser.map((r) => [r.userId, r._count._all]))
   const matchesMap = new Map<string, number>()
+  const lossMap = new Map<string, number>()
   const setDiffMap = new Map<string, number>()
   const gameDiffMap = new Map<string, number>()
   const add = (map: Map<string, number>, key: string, v: number) => map.set(key, (map.get(key) ?? 0) + v)
@@ -91,11 +94,13 @@ export async function calculateUnifiedRanking(year?: number, eventId?: string): 
       add(matchesMap, p1, 1)
       add(setDiffMap, p1, setsP1 - setsP2)
       add(gameDiffMap, p1, gamesP1 - gamesP2)
+      if (m.winnerId && m.winnerId !== p1) add(lossMap, p1, 1)
     }
     if (p2) {
       add(matchesMap, p2, 1)
       add(setDiffMap, p2, setsP2 - setsP1)
       add(gameDiffMap, p2, gamesP2 - gamesP1)
+      if (m.winnerId && m.winnerId !== p2) add(lossMap, p2, 1)
     }
   }
 
@@ -106,6 +111,7 @@ export async function calculateUnifiedRanking(year?: number, eventId?: string): 
       avatarUrl: a.avatarUrl,
       totalPoints: pointsMap.get(a.id) ?? 0,
       wins: winsMap.get(a.id) ?? 0,
+      losses: lossMap.get(a.id) ?? 0,
       matches: matchesMap.get(a.id) ?? 0,
       eventsCount: eventsMap.get(a.id) ?? 0,
       setDiff: setDiffMap.get(a.id) ?? 0,
@@ -179,7 +185,7 @@ export async function calculateDoublesRanking(eventId?: string): Promise<Doubles
   const userIds = [...userInfo.keys()]
   const [pts, matches] = await Promise.all([
     prisma.rankingPoint.findMany({ where: { userId: { in: userIds }, eventId: { in: evIds } }, select: { userId: true, eventId: true, points: true } }),
-    prisma.match.findMany({ where: { status: 'FINISHED', eventId: { in: evIds } }, select: { player1Id: true, player2Id: true, player3Id: true, player4Id: true, winnerId: true } }),
+    prisma.match.findMany({ where: { status: 'FINISHED', isAdminScore: false, eventId: { in: evIds } }, select: { player1Id: true, player2Id: true, player3Id: true, player4Id: true, winnerId: true } }),
   ])
   const ptsMap = new Map<string, number>()
   for (const p of pts) if (p.eventId) ptsMap.set(`${p.userId}|${p.eventId}`, p.points)

@@ -21,6 +21,11 @@ export function computeWinner(
 /** Pontos extra por participação (incentivo a jogar), concedido a vencedor e perdedor. */
 export const PARTICIPATION_POINTS = 1
 
+/** Valores de Match.resultType usados no fechamento administrativo. */
+export const RESULT_TYPE_WO_ADMIN = 'W.O. Admin'
+export const RESULT_TYPE_WO_ADMIN_DRAW = 'W.O. Admin (empate)'
+export const RESULT_TYPE_RATIFIED = 'Homologado Admin'
+
 type MatchSides = { player1Id: string; player2Id: string | null; player3Id: string | null; player4Id: string | null }
 
 /** IDs do lado vencedor e do lado perdedor de uma partida já decidida (considera duplas). */
