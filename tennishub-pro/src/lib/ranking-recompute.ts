@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma'
-import { getMatchSides, getWinPoints, PARTICIPATION_POINTS } from '@/lib/match-points'
+import { getMatchSides, sideMatchPoints } from '@/lib/match-points'
 
 export type ExpectedPoint = { eventId: string; userId: string; points: number; year: number }
 
@@ -10,6 +10,8 @@ export type ExpectedPoint = { eventId: string; userId: string; points: number; y
  * pontos de vitória + 1 de participação; perdedor leva 1 de participação.
  * W.O. Admin (isAdminScore = true): ninguém jogou — o vencedor leva só os pontos de
  * vitória (sem participação) e o perdedor não pontua (não aparece no resultado).
+ * Evento PLAYOFF (scoringSystem.mode = "PLAYOFF"): pontuação plana — vencedor winPoints,
+ * perdedor lossPoints (0 se for W.O. Admin), sem ponto de participação.
  */
 export async function computeExpectedPoints(): Promise<ExpectedPoint[]> {
   const events = await prisma.event.findMany({
@@ -19,7 +21,6 @@ export async function computeExpectedPoints(): Promise<ExpectedPoint[]> {
 
   const result: ExpectedPoint[] = []
   for (const event of events) {
-    const winPoints = getWinPoints(event.scoringSystem)
     const year = new Date(event.startDate).getFullYear()
     const matches = await prisma.match.findMany({
       where: { eventId: event.id, status: 'FINISHED', winnerId: { not: null } },
@@ -27,16 +28,13 @@ export async function computeExpectedPoints(): Promise<ExpectedPoint[]> {
     })
 
     const totals = new Map<string, number>()
-    const add = (uid: string, pts: number) => totals.set(uid, (totals.get(uid) ?? 0) + pts)
+    const add = (uid: string, pts: number) => { if (pts > 0) totals.set(uid, (totals.get(uid) ?? 0) + pts) }
     for (const m of matches) {
       const { winnerSide, loserSide } = getMatchSides(m, m.winnerId!)
-      if (m.isAdminScore) {
-        // W.O. Admin: só o vencedor pontua, e sem o ponto de participação (ninguém jogou).
-        for (const uid of winnerSide) add(uid, winPoints)
-      } else {
-        for (const uid of winnerSide) add(uid, winPoints + PARTICIPATION_POINTS)
-        for (const uid of loserSide) add(uid, PARTICIPATION_POINTS)
-      }
+      const winPts = sideMatchPoints(event.scoringSystem, { isWinner: true, isAdminScore: m.isAdminScore })
+      const lossPts = sideMatchPoints(event.scoringSystem, { isWinner: false, isAdminScore: m.isAdminScore })
+      for (const uid of winnerSide) add(uid, winPts)
+      for (const uid of loserSide) add(uid, lossPts)
     }
     for (const [userId, points] of totals) result.push({ eventId: event.id, userId, points, year })
   }

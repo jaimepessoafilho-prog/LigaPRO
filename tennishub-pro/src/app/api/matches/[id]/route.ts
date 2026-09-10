@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@/generated/prisma/client'
-import { computeWinner, getWinPoints, getMatchSides, isValidSet, trimToDecided, PARTICIPATION_POINTS } from '@/lib/match-points'
+import { computeWinner, isValidSet, trimToDecided, sideMatchPoints } from '@/lib/match-points'
 import { recomputeAllPoints } from '@/lib/ranking-recompute'
 import { notifyAll, MSG } from '@/lib/notifications'
 import { emailAll, EMAIL } from '@/lib/email'
@@ -196,40 +196,18 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       if (!match.winnerId) return NextResponse.json({ message: 'Partida sem vencedor definido' }, { status: 400 })
 
       const event = await prisma.event.findUnique({ where: { id: match.eventId } })
-      const winPoints = getWinPoints(event?.scoringSystem)
-      const year = event ? new Date(event.startDate).getFullYear() : new Date().getFullYear()
       const winnerId = match.winnerId
+      const winPointsForWinner = sideMatchPoints(event?.scoringSystem, { isWinner: true, isAdminScore: false })
 
-      // Em duplas, a dupla vencedora/perdedora inclui o parceiro (player3/player4)
-      const { winnerSide: winnersToCredit, loserSide: losersToCredit } = getMatchSides(match, winnerId)
-
-      // Vencedor: pontos de vitória + incentivo de participação. Perdedor: apenas incentivo de participação.
-      // Quem organiza mas também joga (ex: admin) pontua igual a qualquer outro participante.
-      const creditPoints = new Map<string, number>()
-      for (const uid of winnersToCredit) creditPoints.set(uid, winPoints + PARTICIPATION_POINTS)
-      for (const uid of losersToCredit) creditPoints.set(uid, PARTICIPATION_POINTS)
-
-      const updated = await prisma.$transaction(async (tx) => {
-        const m = await tx.match.update({ where: { id }, data: { status: 'FINISHED' } })
-        for (const [uid, pts] of creditPoints) {
-          const existing = await tx.rankingPoint.findUnique({
-            where: { userId_eventId: { userId: uid, eventId: match.eventId } },
-          })
-          if (existing) {
-            await tx.rankingPoint.update({ where: { id: existing.id }, data: { points: existing.points + pts } })
-          } else {
-            await tx.rankingPoint.create({
-              data: { userId: uid, eventId: match.eventId, points: pts, position: 0, year },
-            })
-          }
-        }
-        return m
-      })
+      // Placar confirmado → jogo finalizado. Os pontos são recalculados do zero
+      // (recomputeAllPoints) para respeitar a regra de cada tipo de evento (normal / playoff).
+      const updated = await prisma.match.update({ where: { id }, data: { status: 'FINISHED' } })
+      await recomputeAllPoints()
 
       const winnerName = (winnerId === match.player1Id ? p1?.name : p2?.name) ?? 'Vencedor'
       const sets = (match.sets as unknown as SetScore[]) ?? []
-      const resultMsg = MSG.resultConfirmed(winnerName, sets, winPoints + PARTICIPATION_POINTS, eventName)
-      const resultEmail = EMAIL.resultConfirmed(winnerName, sets, winPoints + PARTICIPATION_POINTS, eventName)
+      const resultMsg = MSG.resultConfirmed(winnerName, sets, winPointsForWinner, eventName)
+      const resultEmail = EMAIL.resultConfirmed(winnerName, sets, winPointsForWinner, eventName)
       await Promise.all([
         notifyAll([
           { phone: p1?.whatsapp, message: resultMsg },
