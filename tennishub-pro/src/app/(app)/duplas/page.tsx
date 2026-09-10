@@ -63,7 +63,8 @@ export default async function DuplasPage({
   let setsWon = 0, setsLost = 0, gamesWon = 0, gamesLost = 0
   const form: ('V' | 'D')[] = []
   for (const m of myMatches) {
-    if (m.status !== 'FINISHED') continue
+    // W.O. Admin não conta como partida disputada
+    if (m.status !== 'FINISHED' || m.isAdminScore) continue
     const amA = m.player1Id === me || m.player3Id === me
     const myTeamWon = amA ? m.winnerId === m.player1Id : m.winnerId === m.player2Id
     const sets = (m.sets as unknown as SetScore[]) ?? []

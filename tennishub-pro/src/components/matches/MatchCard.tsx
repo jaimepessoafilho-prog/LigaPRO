@@ -310,12 +310,18 @@ export function MatchCard({ match, meId }: { match: MatchView; meId: string }) {
       {match.status === 'FINISHED' && (
         <div>
           {score}
-          <span className="badge-ok">
-            <i className="ti ti-trophy" style={{ verticalAlign: '-2px' }} /> Vencedor: {match.winnerId === match.player1Id ? p1Name : p2Name}
-          </span>
-          {match.isAdminScore && (
+          {match.winnerId ? (
+            <span className="badge-ok">
+              <i className="ti ti-trophy" style={{ verticalAlign: '-2px' }} /> Vencedor: {match.winnerId === match.player1Id ? p1Name : p2Name}
+            </span>
+          ) : (
+            <span className="badge-pend">
+              <i className="ti ti-equal" style={{ verticalAlign: '-2px' }} /> W.O. Admin — empate técnico (sem pontos)
+            </span>
+          )}
+          {match.isAdminScore && match.winnerId && (
             <div style={{ marginTop: '8px', fontSize: '11px', color: 'var(--clay)', fontWeight: 600 }}>
-              <i className="ti ti-shield-star" style={{ verticalAlign: '-2px' }} /> W.O. Admin — placar inserido pelo ADMIN
+              <i className="ti ti-shield-star" style={{ verticalAlign: '-2px' }} /> W.O. Admin — 3 pts ao vencedor, não conta como partida
             </div>
           )}
           {match.resultType === RESULT_TYPE_RATIFIED && (

@@ -190,7 +190,7 @@ export default async function ResultadosPage() {
         <SectionTitle icon="ti-history" style={{ fontSize: '20px' }}>Histórico</SectionTitle>
         {hasWoAdmin && (
           <div style={{ marginBottom: '10px', padding: '10px 14px', borderRadius: '10px', background: 'rgba(200,90,26,.08)', border: '1px solid rgba(200,90,26,.25)', fontSize: '12px', color: 'var(--clay)' }}>
-            <i className="ti ti-shield-star" style={{ verticalAlign: '-2px' }} /> Devido ao encerramento do ranking, todos os jogos não realizados tiveram seu placar inserido, favorecendo sempre o atleta que teve mais jogos realizados entre a dupla.
+            <i className="ti ti-shield-star" style={{ verticalAlign: '-2px' }} /> Jogos não realizados foram fechados por W.O. Admin: 3 pontos para quem teve mais partidas efetivamente disputadas (empate no nº de partidas = ninguém pontua). O W.O. não conta como vitória nem como jogo nas estatísticas.
           </div>
         )}
         {finished.length === 0 ? (

@@ -11,9 +11,10 @@ export async function GET() {
 
   const [pointsAgg, wins, totalMatches, eventsCount, position] = await Promise.all([
     prisma.rankingPoint.aggregate({ where: { userId }, _sum: { points: true }, _count: true }),
-    prisma.match.count({ where: { winnerId: userId, status: 'FINISHED' } }),
+    // W.O. Admin (isAdminScore) não conta como vitória/partida
+    prisma.match.count({ where: { winnerId: userId, status: 'FINISHED', isAdminScore: false } }),
     prisma.match.count({
-      where: { status: 'FINISHED', OR: [{ player1Id: userId }, { player2Id: userId }] },
+      where: { status: 'FINISHED', isAdminScore: false, OR: [{ player1Id: userId }, { player2Id: userId }] },
     }),
     prisma.eventRegistration.count({ where: { userId } }),
     getRankingPosition(userId),

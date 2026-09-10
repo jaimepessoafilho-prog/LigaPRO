@@ -34,7 +34,8 @@ export default async function DashboardPage({
     await Promise.all([
       prisma.rankingPoint.aggregate({ where: { userId, ...pointsScope }, _sum: { points: true } }),
       prisma.match.findMany({
-        where: { status: 'FINISHED', ...matchScope, OR: [{ player1Id: userId }, { player2Id: userId }] },
+        // W.O. Admin não conta como partida disputada nas estatísticas pessoais
+        where: { status: 'FINISHED', isAdminScore: false, ...matchScope, OR: [{ player1Id: userId }, { player2Id: userId }] },
         orderBy: { updatedAt: 'desc' },
         select: { player1Id: true, winnerId: true, sets: true },
       }),

@@ -3,7 +3,7 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@/generated/prisma/client'
 import { isAdminRole } from '@/lib/nav'
-import { computeWinner, isValidSet, trimToDecided, RESULT_TYPE_WO_ADMIN, RESULT_TYPE_RATIFIED } from '@/lib/match-points'
+import { computeWinner, isValidSet, trimToDecided, RESULT_TYPE_WO_ADMIN, RESULT_TYPE_WO_ADMIN_DRAW, RESULT_TYPE_RATIFIED } from '@/lib/match-points'
 import { recomputeAllPoints } from '@/lib/ranking-recompute'
 import { notifyAll, MSG } from '@/lib/notifications'
 import { emailAll, EMAIL } from '@/lib/email'
@@ -18,7 +18,8 @@ const bodySchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('force-apply-correction') }),
   z.object({ action: z.literal('cancel-correction') }),
   z.object({ action: z.literal('ratify-score') }),
-  z.object({ action: z.literal('wo-admin'), winnerId: z.string().min(1) }),
+  // winnerId ausente = empate técnico (mesmo nº de partidas realizadas): W.O. sem pontuação
+  z.object({ action: z.literal('wo-admin'), winnerId: z.string().min(1).optional() }),
 ])
 
 // Fechamento administrativo de placar (RF-03/RF-04): correção de jogo já realizado
@@ -195,6 +196,26 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   }
   const teamA = [match.player1Id, match.player3Id].filter(Boolean) as string[]
   const teamB = [match.player2Id, match.player4Id].filter(Boolean) as string[]
+
+  // Empate técnico (sem winnerId): W.O. não pontua ninguém. winnerId nulo já faz o
+  // computeExpectedPoints ignorar o jogo, e isAdminScore mantém fora de vitórias/jogos.
+  if (!body.winnerId) {
+    const updated = await prisma.match.update({
+      where: { id },
+      data: {
+        sets: [],
+        winnerId: null,
+        status: 'FINISHED',
+        isAdminScore: true,
+        resultType: RESULT_TYPE_WO_ADMIN_DRAW,
+        scoreEditedById: session.user.id,
+        scoreEditedAt: new Date(),
+      },
+    })
+    await recomputeAllPoints()
+    return NextResponse.json(updated)
+  }
+
   if (!teamA.includes(body.winnerId) && !teamB.includes(body.winnerId)) {
     return NextResponse.json({ message: 'Vencedor não participa desta partida' }, { status: 400 })
   }
