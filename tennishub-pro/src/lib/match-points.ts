@@ -56,6 +56,41 @@ export function getWinPoints(scoringSystem: unknown): number {
   return 3
 }
 
+/**
+ * Evento em regime de PLAYOFF: pontuação plana por partida disputada, sem ponto de
+ * participação separado. `scoringSystem = { mode: "PLAYOFF", winPoints, lossPoints }`.
+ * Vencedor leva winPoints; perdedor leva lossPoints (0 em W.O. Admin — ver
+ * computeExpectedPoints). Retorna null para eventos que não são playoff.
+ */
+export function getPlayoffScoring(scoringSystem: unknown): { win: number; loss: number } | null {
+  if (scoringSystem && typeof scoringSystem === 'object') {
+    const ss = scoringSystem as { mode?: string; winPoints?: number; lossPoints?: number }
+    if (ss.mode === 'PLAYOFF' && typeof ss.winPoints === 'number' && typeof ss.lossPoints === 'number') {
+      return { win: ss.winPoints, loss: ss.lossPoints }
+    }
+  }
+  return null
+}
+
+/**
+ * Pontos de ranking que UM lado de UMA partida FINISHED vale — fonte única usada tanto
+ * pelo recálculo (computeExpectedPoints) quanto pelas notificações do confirm-score.
+ *  - PLAYOFF: vencedor winPoints, perdedor lossPoints (0 se W.O. Admin).
+ *  - Normal: vencedor winPoints + participação; perdedor participação.
+ *  - W.O. Admin normal: vencedor winPoints (sem participação); perdedor 0.
+ */
+export function sideMatchPoints(
+  scoringSystem: unknown,
+  opts: { isWinner: boolean; isAdminScore: boolean },
+): number {
+  const playoff = getPlayoffScoring(scoringSystem)
+  if (playoff) return opts.isWinner ? playoff.win : opts.isAdminScore ? 0 : playoff.loss
+
+  const winPoints = getWinPoints(scoringSystem)
+  if (opts.isAdminScore) return opts.isWinner ? winPoints : 0
+  return opts.isWinner ? winPoints + PARTICIPATION_POINTS : PARTICIPATION_POINTS
+}
+
 export function isValidSet(s: SetScore): boolean {
   return Number.isFinite(s.p1) && Number.isFinite(s.p2) && s.p1 >= 0 && s.p2 >= 0 && !(s.p1 === 0 && s.p2 === 0)
 }
