@@ -9,7 +9,7 @@ export type ExpectedPoint = { eventId: string; userId: string; points: number; y
  * Jogo disputado (isAdminScore = false, inclui os homologados pelo ADMIN): vencedor leva
  * pontos de vitória + 1 de participação; perdedor leva 1 de participação.
  * W.O. Admin (isAdminScore = true): ninguém jogou — o vencedor leva só os pontos de
- * vitória (sem participação) e o perdedor não pontua.
+ * vitória (sem participação) e o perdedor não pontua (não aparece no resultado).
  */
 export async function computeExpectedPoints(): Promise<ExpectedPoint[]> {
   const events = await prisma.event.findMany({
@@ -46,47 +46,65 @@ export async function computeExpectedPoints(): Promise<ExpectedPoint[]> {
 /** Quantos eventos têm pontos gravados diferentes do que deveriam ser (nada pendente = 0). */
 export async function countEventsPendingRecalculation(): Promise<number> {
   const expected = await computeExpectedPoints()
-  if (expected.length === 0) return 0
 
   const existing = await prisma.rankingPoint.findMany({
-    where: { OR: expected.map((e) => ({ userId: e.userId, eventId: e.eventId })) },
+    where: { eventId: { not: null } },
     select: { userId: true, eventId: true, points: true },
   })
   const existingMap = new Map(existing.map((r) => [`${r.userId}|${r.eventId}`, r.points]))
+  const expectedKeys = new Set(expected.map((e) => `${e.userId}|${e.eventId}`))
 
   const staleEvents = new Set<string>()
+  // Pontos que deveriam existir e não batem (ou faltam)
   for (const e of expected) {
     if ((existingMap.get(`${e.userId}|${e.eventId}`) ?? null) !== e.points) staleEvents.add(e.eventId)
+  }
+  // Pontos gravados que não têm mais jogo correspondente (ex.: W.O. revertido, jogo contestado)
+  for (const r of existing) {
+    if (r.eventId && !expectedKeys.has(`${r.userId}|${r.eventId}`)) staleEvents.add(r.eventId)
   }
   return staleEvents.size
 }
 
 /**
- * Recalcula os pontos de ranking de todos os eventos com jogos FINISHED, a partir do zero.
- * Idempotente — chamada tanto pelo botão manual de recálculo quanto automaticamente após
- * toda edição administrativa de placar (correção, homologação ou W.O. Admin). As regras de
- * pontuação por tipo de jogo ficam em computeExpectedPoints (W.O. Admin não dá ponto de
- * participação a ninguém e não pontua o perdedor).
+ * Recalcula os pontos de ranking de todos os eventos, a partir do zero. Idempotente —
+ * chamada tanto pelo botão manual de recálculo quanto automaticamente após toda edição
+ * administrativa de placar (correção, homologação ou W.O. Admin).
+ *
+ * Reconcilia nos dois sentidos: cria/atualiza os pontos esperados E **apaga** as linhas de
+ * ranking_points que não têm mais jogo FINISHED correspondente (quem perdeu todos os jogos
+ * por W.O. e teve o W.O. revertido, placar contestado, jogo removido). Pontos preservados de
+ * eventos excluídos (eventId nulo) ficam intactos. As regras de pontuação por tipo de jogo
+ * ficam em computeExpectedPoints (W.O. Admin: vencedor só a vitória, perdedor zero).
  */
 export async function recomputeAllPoints(): Promise<{ eventsProcessed: number; athletesUpdated: number }> {
   const expected = await computeExpectedPoints()
   const existing = await prisma.rankingPoint.findMany({
-    where: { OR: expected.map((e) => ({ userId: e.userId, eventId: e.eventId })) },
+    where: { eventId: { not: null } },
     select: { id: true, userId: true, eventId: true, points: true },
   })
   const existingMap = new Map(existing.map((r) => [`${r.userId}|${r.eventId}`, r]))
+  const expectedKeys = new Set(expected.map((e) => `${e.userId}|${e.eventId}`))
 
   const toWrite = expected.filter((e) => (existingMap.get(`${e.userId}|${e.eventId}`)?.points ?? null) !== e.points)
-  const eventsProcessed = new Set(toWrite.map((e) => e.eventId)).size
+  const orphans = existing.filter((r) => !expectedKeys.has(`${r.userId}|${r.eventId}`))
 
-  await prisma.$transaction(
-    toWrite.map((e) => {
-      const row = existingMap.get(`${e.userId}|${e.eventId}`)
-      return row
-        ? prisma.rankingPoint.update({ where: { id: row.id }, data: { points: e.points } })
-        : prisma.rankingPoint.create({ data: { userId: e.userId, eventId: e.eventId, points: e.points, position: 0, year: e.year } })
-    }),
-  )
+  const writeOps = toWrite.map((e) => {
+    const row = existingMap.get(`${e.userId}|${e.eventId}`)
+    return row
+      ? prisma.rankingPoint.update({ where: { id: row.id }, data: { points: e.points } })
+      : prisma.rankingPoint.create({ data: { userId: e.userId, eventId: e.eventId, points: e.points, position: 0, year: e.year } })
+  })
+  const deleteOps = orphans.map((r) => prisma.rankingPoint.delete({ where: { id: r.id } }))
 
-  return { eventsProcessed, athletesUpdated: toWrite.length }
+  if (writeOps.length + deleteOps.length > 0) {
+    await prisma.$transaction([...writeOps, ...deleteOps])
+  }
+
+  const eventsProcessed = new Set<string>([
+    ...toWrite.map((e) => e.eventId),
+    ...orphans.map((r) => r.eventId as string),
+  ]).size
+
+  return { eventsProcessed, athletesUpdated: writeOps.length + deleteOps.length }
 }
